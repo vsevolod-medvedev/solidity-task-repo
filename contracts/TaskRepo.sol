@@ -36,6 +36,11 @@ contract TaskRepo {
         _;
     }
 
+    modifier notStatus(uint256 _id, Status _status) {
+        require(tasks[_id].status != _status, "The task already has this status");
+        _;
+    }
+
     function createTask(uint256 _estimatedTimeInSeconds) external {
         uint256 id = tasks.length;
         uint256 createdTime = block.timestamp;
@@ -73,11 +78,8 @@ contract TaskRepo {
         emit TaskDeleted(_id, tasks[_id].owner);
     }
 
-    function changeTaskStatus(uint256 _id, Status _status) external ownerOnly(_id) notDeleted(_id) {
+    function changeTaskStatus(uint256 _id, Status _status) external ownerOnly(_id) notDeleted(_id) notStatus(_id, _status) {
         Task storage task = tasks[_id];
-        if (_status == task.status) {
-            return;
-        }
         task.status = _status;
         if (_status == Status.Completed) {
             task.isCompletedInTime = block.timestamp <= task.createdTime + task.estimatedTimeInSeconds;
