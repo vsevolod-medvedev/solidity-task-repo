@@ -4,58 +4,61 @@
 pragma solidity >=0.7.0 <0.9.0;
 
 contract TaskRepo {
-    enum Status { Pending, Completed }
+    enum Status {
+        Pending,
+        Completed
+    }
 
     struct Task {
-        uint id;
+        uint256 id;
         address owner;
-        uint createdTime;
-        uint estimatedTimeInSeconds;
+        uint256 createdTime;
+        uint256 estimatedTimeInSeconds;
         Status status;
         bool isDeleted;
         bool isCompletedInTime;
     }
-    
+
     Task[] tasks;
-    mapping (address => uint) public userToTasksCompletedInTimePercent;
+    mapping(address => uint256) public userToTasksCompletedInTimePercent;
 
-    event TaskCreated(uint id, address owner, uint createdTime, uint estimatedTimeInSeconds);
-    event TaskCompleted(uint id, bool inTime);
-    event TaskDeleted(uint id);
+    event TaskCreated(uint256 indexed id, address indexed owner, uint256 createdTime, uint256 estimatedTimeInSeconds);
+    event TaskCompleted(uint256 indexed id, address indexed owner, bool indexed inTime);
+    event TaskDeleted(uint256 indexed id, address indexed owner);
 
-    modifier ownerOnly(uint _id) {
+    modifier ownerOnly(uint256 _id) {
         require(tasks[_id].owner == msg.sender, "Only owner can modify a task");
         _;
     }
 
-    modifier notDeleted(uint _id) {
+    modifier notDeleted(uint256 _id) {
         require(!tasks[_id].isDeleted, "The task was deleted previously");
         _;
     }
 
-    function createTask(uint _estimatedTimeInSeconds) public {
-        uint id = tasks.length;
-        uint createdTime = block.timestamp;
+    function createTask(uint256 _estimatedTimeInSeconds) public {
+        uint256 id = tasks.length;
+        uint256 createdTime = block.timestamp;
         Task memory task = Task(id, msg.sender, createdTime, _estimatedTimeInSeconds, Status.Pending, false, false);
         tasks.push(task);
         _updateUserToTasksCompletedInTimePercent(msg.sender);
         emit TaskCreated(task.id, task.owner, task.createdTime, task.estimatedTimeInSeconds);
     }
 
-    function getTask(uint _id) public view notDeleted(_id) returns (Task memory) {
+    function getTask(uint256 _id) public view notDeleted(_id) returns (Task memory) {
         return tasks[_id];
     }
 
     function listTasks() public view returns (Task[] memory) {
-        uint size = 0;
-        for (uint i = 0; i < tasks.length; i++) {
+        uint256 size = 0;
+        for (uint256 i = 0; i < tasks.length; i++) {
             if (!tasks[i].isDeleted) {
                 size++;
             }
         }
         Task[] memory filtered = new Task[](size);
-        uint j = 0;
-        for (uint i = 0; i < tasks.length; i++) {
+        uint256 j = 0;
+        for (uint256 i = 0; i < tasks.length; i++) {
             if (!tasks[i].isDeleted) {
                 filtered[j] = tasks[i];
                 j++;
@@ -64,13 +67,13 @@ contract TaskRepo {
         return filtered;
     }
 
-    function deleteTask(uint _id) public ownerOnly(_id) notDeleted(_id) {
+    function deleteTask(uint256 _id) public ownerOnly(_id) notDeleted(_id) {
         tasks[_id].isDeleted = true;
         _updateUserToTasksCompletedInTimePercent(msg.sender);
-        emit TaskDeleted(_id);
+        emit TaskDeleted(_id, tasks[_id].owner);
     }
 
-    function changeTaskStatus(uint _id, Status _status) public ownerOnly(_id) notDeleted(_id) {
+    function changeTaskStatus(uint256 _id, Status _status) public ownerOnly(_id) notDeleted(_id) {
         Task storage task = tasks[_id];
         if (_status == task.status) {
             return;
@@ -79,14 +82,14 @@ contract TaskRepo {
         if (_status == Status.Completed) {
             task.isCompletedInTime = block.timestamp <= task.createdTime + task.estimatedTimeInSeconds;
             _updateUserToTasksCompletedInTimePercent(msg.sender);
-            emit TaskCompleted(_id, task.isCompletedInTime);
+            emit TaskCompleted(_id, task.owner, task.isCompletedInTime);
         }
     }
 
     function _updateUserToTasksCompletedInTimePercent(address _user) private {
-        uint inTimeCount = 0;
-        uint completedCount = 0;
-        for (uint i = 0; i < tasks.length; i++) {
+        uint256 inTimeCount = 0;
+        uint256 completedCount = 0;
+        for (uint256 i = 0; i < tasks.length; i++) {
             Task memory task = tasks[i];
             if (!task.isDeleted && task.owner == _user) {
                 if (task.status == Status.Completed) {
@@ -97,11 +100,11 @@ contract TaskRepo {
                 }
             }
         }
-        uint percent;
+        uint256 percent;
         if (completedCount == 0) {
             percent = 0;
         } else {
-            percent = inTimeCount * 100 / completedCount;
+            percent = (inTimeCount * 100) / completedCount;
         }
         userToTasksCompletedInTimePercent[_user] = percent;
     }

@@ -6,10 +6,8 @@ Test task for iLink 2022.
 
 ```bash
 $ nvm use
-```
-
-```bash
 $ npm install
+$ npx hardhat mnemonic  # use it in .env
 ```
 
 ## Development
