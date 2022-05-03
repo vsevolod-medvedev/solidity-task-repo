@@ -36,7 +36,7 @@ contract TaskRepo {
         _;
     }
 
-    function createTask(uint256 _estimatedTimeInSeconds) public {
+    function createTask(uint256 _estimatedTimeInSeconds) external {
         uint256 id = tasks.length;
         uint256 createdTime = block.timestamp;
         Task memory task = Task(id, msg.sender, createdTime, _estimatedTimeInSeconds, Status.Pending, false, false);
@@ -45,11 +45,11 @@ contract TaskRepo {
         emit TaskCreated(task.id, task.owner, task.createdTime, task.estimatedTimeInSeconds);
     }
 
-    function getTask(uint256 _id) public view notDeleted(_id) returns (Task memory) {
+    function getTask(uint256 _id) external view notDeleted(_id) returns (Task memory) {
         return tasks[_id];
     }
 
-    function listTasks() public view returns (Task[] memory) {
+    function listTasks() external view returns (Task[] memory) {
         uint256 size = 0;
         for (uint256 i = 0; i < tasks.length; i++) {
             if (!tasks[i].isDeleted) {
@@ -67,13 +67,13 @@ contract TaskRepo {
         return filtered;
     }
 
-    function deleteTask(uint256 _id) public ownerOnly(_id) notDeleted(_id) {
+    function deleteTask(uint256 _id) external ownerOnly(_id) notDeleted(_id) {
         tasks[_id].isDeleted = true;
         _updateUserToTasksCompletedInTimePercent(msg.sender);
         emit TaskDeleted(_id, tasks[_id].owner);
     }
 
-    function changeTaskStatus(uint256 _id, Status _status) public ownerOnly(_id) notDeleted(_id) {
+    function changeTaskStatus(uint256 _id, Status _status) external ownerOnly(_id) notDeleted(_id) {
         Task storage task = tasks[_id];
         if (_status == task.status) {
             return;
