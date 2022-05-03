@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
-// Vsevolod Medvedev, 2022, for iLink
-
 pragma solidity >=0.7.0 <0.9.0;
 
+/// @title The test task for iLink Academy, 2022
+/// @author Vsevolod Medvedev
+/// @notice Allows executing typical CRUD operations over the Task model
 contract TaskRepo {
     enum Status {
         Pending,
@@ -41,6 +42,8 @@ contract TaskRepo {
         _;
     }
 
+    /// @notice Create a task
+    /// @param _estimatedTimeInSeconds Estimated time in seconds
     function createTask(uint256 _estimatedTimeInSeconds) external {
         uint256 id = tasks.length;
         uint256 createdTime = block.timestamp;
