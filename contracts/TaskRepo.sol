@@ -104,7 +104,7 @@ contract TaskRepo {
         if (completedCount == 0) {
             percent = 0;
         } else {
-            percent = (inTimeCount * 100) / completedCount;
+            percent = (inTimeCount * 10000) / completedCount;
         }
         userToTasksCompletedInTimePercent[_user] = percent;
     }
