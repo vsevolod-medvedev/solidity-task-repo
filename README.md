@@ -40,6 +40,15 @@ Run tests and calculate gasPrice with command:
 $ REPORT_GAS=true npx hardhat test
 ```
 
+### Running tasks
+
+```bash
+npx hardhat accounts
+
+npx hardhat create-task --owner <address> --estimated-time 50
+
+```
+
 ### Deploy
 
 Run deploy in hardhat network
