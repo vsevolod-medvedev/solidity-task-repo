@@ -48,3 +48,12 @@ task("complete-task", "Complete a task")
         await taskRepo.connect(signer).changeTaskStatus(taskArgs.id, 1)
         console.log("Task completed!")
     })
+
+task("get-user-percent", "Get user's tasks completed in time percent")
+    .addParam("account", "The account's address")
+    .setAction(async (taskArgs, hre) => {
+        const taskRepo = await hre.ethers.getContractAt("TaskRepo", TaskRepoAddress)
+
+        const percent = (await taskRepo.userToTasksCompletedInTimePercent(taskArgs.account)) / 100
+        console.log(`Tasks completed in time: ${percent.toFixed(2)} %`)
+    })
