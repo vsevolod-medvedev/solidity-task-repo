@@ -31,7 +31,11 @@ Create your tests in test folder. To set typed test, describe types in `test.con
 Run tests with command:
 
 ```bash
-$ npx hardhat test TEST_PATH
+# All tests:
+$ npx hardhat test
+
+# Specific tests:
+$ npx hardhat test tests/TaskRepo.test.ts
 ```
 
 Run tests and calculate gasPrice with command:
@@ -43,10 +47,14 @@ $ REPORT_GAS=true npx hardhat test
 ### Running tasks
 
 ```bash
+npx hardhat node  # for running locally
 npx hardhat accounts
 
-npx hardhat create-task --owner <address> --estimated-time 50
-
+npx hardhat create-task --estimated-time 50 --account <address> --network <network>
+npx hardhat get-task --id <task_id> --account <address> --network <network>
+npx hardhat list-tasks --network <network>
+npx hardhat delete-task --id <task_id> --account <address> --network <network>
+npx hardhat complete-task --id <task_id> --account <address> --network <network>
 ```
 
 ### Deploy

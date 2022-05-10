@@ -53,10 +53,13 @@ contract TaskRepo {
         emit TaskCreated(task.id, task.owner, task.createdTime, task.estimatedTimeInSeconds);
     }
 
+    /// @notice Get a task
+    /// @param _id Task ID
     function getTask(uint256 _id) external view notDeleted(_id) returns (Task memory) {
         return tasks[_id];
     }
 
+    /// @notice List tasks for all users
     function listTasks() external view returns (Task[] memory) {
         uint256 size = 0;
         for (uint256 i = 0; i < tasks.length; i++) {
@@ -75,12 +78,17 @@ contract TaskRepo {
         return filtered;
     }
 
+    /// @notice Delete a task (owner only)
+    /// @param _id Task ID
     function deleteTask(uint256 _id) external ownerOnly(_id) notDeleted(_id) {
         tasks[_id].isDeleted = true;
         _updateUserToTasksCompletedInTimePercent(msg.sender);
         emit TaskDeleted(_id, tasks[_id].owner);
     }
 
+    /// @notice Change a task status (owner only)
+    /// @param _id Task ID
+    /// @param _status New status
     function changeTaskStatus(uint256 _id, Status _status) external ownerOnly(_id) notDeleted(_id) notStatus(_id, _status) {
         Task storage task = tasks[_id];
         task.status = _status;
