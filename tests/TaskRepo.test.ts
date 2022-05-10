@@ -33,7 +33,6 @@ describe("TaskRepo contract tests", () => {
             expect(task.status).to.equal(0)
             expect(task.isDeleted).to.equal(false)
             expect(task.isCompletedInTime).to.equal(false)
-            expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.bob.address)).to.equal(0)
         })
 
         it("List tasks", async function () {
@@ -109,5 +108,41 @@ describe("TaskRepo contract tests", () => {
         it("Delete the task", async function () {
             await expect(this.taskRepo.connect(this.alice).deleteTask(1)).to.be.revertedWith("The task was deleted previously")
         })
+    })
+
+    it("Should update user's percent when completing a task", async function () {
+        await this.taskRepo.connect(this.carol).createTask(2)
+        await this.taskRepo.connect(this.carol).createTask(10)
+        await this.taskRepo.connect(this.carol).createTask(10)
+
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(0)
+
+        await this.taskRepo.connect(this.carol).changeTaskStatus(0, 1)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(0)
+
+        await this.taskRepo.connect(this.carol).changeTaskStatus(1, 1)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(5000)
+
+        await this.taskRepo.connect(this.carol).changeTaskStatus(2, 1)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(6666)
+    })
+
+    it("Should update user's percent when deleting a task", async function () {
+        await this.taskRepo.connect(this.carol).createTask(2)
+        await this.taskRepo.connect(this.carol).createTask(10)
+        await this.taskRepo.connect(this.carol).createTask(10)
+        await this.taskRepo.connect(this.carol).changeTaskStatus(0, 1)
+        await this.taskRepo.connect(this.carol).changeTaskStatus(1, 1)
+        await this.taskRepo.connect(this.carol).changeTaskStatus(2, 1)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(6666)
+
+        await this.taskRepo.connect(this.carol).deleteTask(2)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(5000)
+
+        await this.taskRepo.connect(this.carol).deleteTask(0)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(10000)
+
+        await this.taskRepo.connect(this.carol).deleteTask(1)
+        expect(await this.taskRepo.userToTasksCompletedInTimePercent(this.carol.address)).to.equal(0)
     })
 })
