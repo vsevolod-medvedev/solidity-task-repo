@@ -14,4 +14,8 @@ npx hardhat list-tasks --network localhost
 npx hardhat get-task --id 0 --network localhost
 npx hardhat complete-task --id 0 --account 0x590928e30103457a584465e31DF5CCd97109ACe8 --network localhost
 npx hardhat delete-task --id 0 --network localhost
+
+npx hardhat create-game --timeout 10 --account 0x590928e30103457a584465e31DF5CCd97109ACe8 --network localhost
+npx hardhat list-games --network localhost
+npx hardhat get-game-field --id 0 --account 0x590928e30103457a584465e31DF5CCd97109ACe8 --network localhost
 ```

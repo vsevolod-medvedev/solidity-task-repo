@@ -58,6 +58,12 @@ contract NoughtsAndCrosses {
         emit GameCreated(game.id, game.player1);
     }
 
+    /// @notice Get the game field
+    /// @param _gameId The game ID
+    function getGameField(uint256 _gameId) external view returns (GameField memory) {
+        return games[_gameId].field;
+    }
+
     /// @notice List created games
     function listCreatedGames() external view returns (Game[] memory) {
         uint256 size = 0;
@@ -86,7 +92,9 @@ contract NoughtsAndCrosses {
     }
 
     /// @notice Make turn. Can only be called by the player whose turn it is now
-    function makeTurn() external {}
+    function makeTurn() external {
+        // TODO: Require msg.sender to be player1 or player2
+    }
 
     /// @notice Get win. Can only be called by the player who won.
     function getWin() external {}
