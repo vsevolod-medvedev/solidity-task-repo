@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity ^0.8.0;
+pragma solidity >=0.8.0 <0.9.0;
 
 /// @title The test task for iLink Academy, 2022
 /// @author Vsevolod Medvedev
@@ -20,7 +20,7 @@ contract NoughtsAndCrosses {
     }
 
     struct GameField {
-        FieldValue[2][2] values;
+        FieldValue[3][3] values;
     }
 
     struct Game {
@@ -53,24 +53,24 @@ contract NoughtsAndCrosses {
 
     function getWin() external {}
 
-    function _check(uint256 gameId) private returns (GameState) {
+    function _check(uint256 gameId) private view returns (GameState) {
         GameField memory field = games[gameId].field;
 
         // Check rows and columns
         for (uint256 i = 0; i < 3; i++) {
-            if (field.values[i][0] == field.values[i][1] == field.values[i][2] == FieldValue.Cross || field.values[0][i] == field.values[1][i] == field.values[2][i] == FieldValue.Cross) {
+            if ((field.values[i][0] == FieldValue.Cross && field.values[i][1] == FieldValue.Cross && field.values[i][2] == FieldValue.Cross) || (field.values[0][i] == FieldValue.Cross && field.values[1][i] == FieldValue.Cross && field.values[2][i] == FieldValue.Cross)) {
                 return GameState.Player1Win;
             }
-            if (field.values[i][0] == field.values[i][1] == field.values[i][2] == FieldValue.Nought || field.values[0][i] == field.values[1][i] == field.values[2][i] == FieldValue.Nought) {
+            if ((field.values[i][0] == FieldValue.Nought && field.values[i][1] == FieldValue.Nought && field.values[i][2] == FieldValue.Nought) || (field.values[0][i] == FieldValue.Nought && field.values[1][i] == FieldValue.Nought && field.values[2][i] == FieldValue.Nought)) {
                 return GameState.Player2Win;
             }
         }
 
         // Check diagonals
-        if (field.values[0][0] == field.values[1][1] == field.values[2][2] == FieldValue.Cross || field.values[2][0] == field.values[1][1] == field.values[0][2] == FieldValue.Cross) {
+        if ((field.values[0][0] == FieldValue.Cross && field.values[1][1] == FieldValue.Cross && field.values[2][2] == FieldValue.Cross) || (field.values[2][0] == FieldValue.Cross && field.values[1][1] == FieldValue.Cross && field.values[0][2] == FieldValue.Cross)) {
             return GameState.Player1Win;
         }
-        if (field.values[0][0] == field.values[1][1] == field.values[2][2] == FieldValue.Nought || field.values[2][0] == field.values[1][1] == field.values[0][2] == FieldValue.Nought) {
+        if ((field.values[0][0] == FieldValue.Nought && field.values[1][1] == FieldValue.Nought && field.values[2][2] == FieldValue.Nought) || (field.values[2][0] == FieldValue.Nought && field.values[1][1] == FieldValue.Nought && field.values[0][2] == FieldValue.Nought)) {
             return GameState.Player2Win;
         }
 
