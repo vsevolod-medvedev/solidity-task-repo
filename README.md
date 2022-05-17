@@ -2,6 +2,11 @@
 
 Test task for iLink 2022.
 
+Includes:
+
+- **NoughtsAndCrosses** game;
+- **TaskRepo** CRUD application.
+
 ## Installation
 
 ```bash
@@ -49,12 +54,24 @@ $ REPORT_GAS=true npx hardhat test
 ```bash
 npx hardhat node  # for running locally
 npx hardhat accounts
+```
 
+**TaskRepo** contract:
+
+```bash
 npx hardhat create-task --estimated-time 50 --account <address> --network <network>
 npx hardhat get-task --id <task_id> --account <address> --network <network>
 npx hardhat list-tasks --network <network>
 npx hardhat delete-task --id <task_id> --account <address> --network <network>
 npx hardhat complete-task --id <task_id> --account <address> --network <network>
+```
+
+**NoughtsAndCrosses** contract:
+
+```bash
+npx hardhat create-game --timeout 50 --account <address> --network <network>
+npx hardhat list-games --network <network>
+...
 ```
 
 ### Deploy
