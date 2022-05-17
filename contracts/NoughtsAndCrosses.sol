@@ -58,19 +58,47 @@ contract NoughtsAndCrosses {
 
         // Check rows and columns
         for (uint256 i = 0; i < 3; i++) {
-            if ((field.values[i][0] == FieldValue.Cross && field.values[i][1] == FieldValue.Cross && field.values[i][2] == FieldValue.Cross) || (field.values[0][i] == FieldValue.Cross && field.values[1][i] == FieldValue.Cross && field.values[2][i] == FieldValue.Cross)) {
+            if (
+                (field.values[i][0] == FieldValue.Cross &&
+                    field.values[i][1] == FieldValue.Cross &&
+                    field.values[i][2] == FieldValue.Cross) ||
+                (field.values[0][i] == FieldValue.Cross &&
+                    field.values[1][i] == FieldValue.Cross &&
+                    field.values[2][i] == FieldValue.Cross)
+            ) {
                 return GameState.Player1Win;
             }
-            if ((field.values[i][0] == FieldValue.Nought && field.values[i][1] == FieldValue.Nought && field.values[i][2] == FieldValue.Nought) || (field.values[0][i] == FieldValue.Nought && field.values[1][i] == FieldValue.Nought && field.values[2][i] == FieldValue.Nought)) {
+            if (
+                (field.values[i][0] == FieldValue.Nought &&
+                    field.values[i][1] == FieldValue.Nought &&
+                    field.values[i][2] == FieldValue.Nought) ||
+                (field.values[0][i] == FieldValue.Nought &&
+                    field.values[1][i] == FieldValue.Nought &&
+                    field.values[2][i] == FieldValue.Nought)
+            ) {
                 return GameState.Player2Win;
             }
         }
 
         // Check diagonals
-        if ((field.values[0][0] == FieldValue.Cross && field.values[1][1] == FieldValue.Cross && field.values[2][2] == FieldValue.Cross) || (field.values[2][0] == FieldValue.Cross && field.values[1][1] == FieldValue.Cross && field.values[0][2] == FieldValue.Cross)) {
+        if (
+            (field.values[0][0] == FieldValue.Cross &&
+                field.values[1][1] == FieldValue.Cross &&
+                field.values[2][2] == FieldValue.Cross) ||
+            (field.values[2][0] == FieldValue.Cross &&
+                field.values[1][1] == FieldValue.Cross &&
+                field.values[0][2] == FieldValue.Cross)
+        ) {
             return GameState.Player1Win;
         }
-        if ((field.values[0][0] == FieldValue.Nought && field.values[1][1] == FieldValue.Nought && field.values[2][2] == FieldValue.Nought) || (field.values[2][0] == FieldValue.Nought && field.values[1][1] == FieldValue.Nought && field.values[0][2] == FieldValue.Nought)) {
+        if (
+            (field.values[0][0] == FieldValue.Nought &&
+                field.values[1][1] == FieldValue.Nought &&
+                field.values[2][2] == FieldValue.Nought) ||
+            (field.values[2][0] == FieldValue.Nought &&
+                field.values[1][1] == FieldValue.Nought &&
+                field.values[0][2] == FieldValue.Nought)
+        ) {
             return GameState.Player2Win;
         }
 
