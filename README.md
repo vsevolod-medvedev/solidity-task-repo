@@ -75,6 +75,7 @@ npx hardhat complete-task --id <task_id> --account <address> --network <network>
 
 ```bash
 npx hardhat create-game --timeout 50 --account <address> --network <network>
+npx hardhat get-game --id <game_id> --network <network>
 npx hardhat list-games --network <network>
 npx hardhat join-game --id <game_id> --account <address> --network <network>
 npx hardhat make-turn --id <game_id> --x <x_coord> --y <y_coord> --account <address> --network <network>

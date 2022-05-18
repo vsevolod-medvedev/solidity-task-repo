@@ -23,16 +23,6 @@ task("get-game", "Get game")
         console.log(await noughtsAndCrosses.connect(signer).getGame(taskArgs.id))
     })
 
-task("get-game-field", "Get game field")
-    .addParam("account", "The account's address")
-    .addParam("id", "The game ID")
-    .setAction(async (taskArgs, hre) => {
-        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
-        const signer = await hre.ethers.getSigner(taskArgs.account)
-
-        console.log(await noughtsAndCrosses.connect(signer).getGameField(taskArgs.id))
-    })
-
 task("list-games", "List created games").setAction(async (taskArgs, hre) => {
     const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
 
