@@ -29,7 +29,7 @@ contract NoughtsAndCrosses {
         address player1;
         address player2;
         uint256 id;
-        uint256 startedAt;
+        uint256 lastTurnTime;
         uint256 timeout;
         GameField field;
         GameState state;
@@ -39,8 +39,27 @@ contract NoughtsAndCrosses {
 
     event GameCreated(uint256 indexed id, address indexed owner);
 
-    modifier onlyState(uint256 _gameId, GameState _state) {
+    modifier currentPlayerOnly(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(
+            (msg.sender == game.player1 && game.state == GameState.Player1Turn) ||
+                (msg.sender == game.player2 && game.state == GameState.Player2Turn)
+        );
+        _;
+    }
+
+    modifier stateOnly(uint256 _gameId, GameState _state) {
         require(games[_gameId].state == _state, "The game is in another state");
+        _;
+    }
+
+    modifier verifyCoordinates(
+        uint256 _gameId,
+        uint8 _x,
+        uint8 _y
+    ) {
+        require(_x >= 0 && _x <= 2 && _y >= 0 && _y <= 2, "Coordinates are out of range");
+        require(games[_gameId].field.values[_y][_x] == FieldValue.Empty, "The cell is already filled");
         _;
     }
 
@@ -52,10 +71,16 @@ contract NoughtsAndCrosses {
         GameField memory field;
         for (uint256 i = 0; i < 3; i++) for (uint256 j = 0; j < 3; j++) field.values[i][j] = FieldValue.Empty;
 
-        Game memory game = Game(msg.sender, address(0), id, _timeout, 0, field, GameState.WaitingForPlayer2ToJoin);
+        Game memory game = Game(msg.sender, address(0), id, 0, _timeout, field, GameState.WaitingForPlayer2ToJoin);
         games.push(game);
 
         emit GameCreated(game.id, game.player1);
+    }
+
+    /// @notice Get the game
+    /// @param _gameId The game ID
+    function getGame(uint256 _gameId) external view returns (Game memory) {
+        return games[_gameId];
     }
 
     /// @notice Get the game field
@@ -85,15 +110,37 @@ contract NoughtsAndCrosses {
 
     /// @notice Join the specified game. A caller becomes player2 and waits for player1 to make turn
     /// @param _gameId Game to join
-    function joinGame(uint256 _gameId) external onlyState(_gameId, GameState.WaitingForPlayer2ToJoin) {
+    function joinGame(uint256 _gameId) external stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin) {
         games[_gameId].player2 = msg.sender;
-        games[_gameId].startedAt = block.timestamp;
         games[_gameId].state = GameState.Player1Turn;
+        games[_gameId].lastTurnTime = block.timestamp;
     }
 
     /// @notice Make turn. Can only be called by the player whose turn it is now
-    function makeTurn() external {
-        // TODO: Require msg.sender to be player1 or player2
+    function makeTurn(
+        uint256 _gameId,
+        uint8 _x,
+        uint8 _y
+    ) external currentPlayerOnly(_gameId) verifyCoordinates(_gameId, _x, _y) returns (GameField memory, GameState) {
+        Game memory game = games[_gameId];
+
+        // Check timeout
+        if (block.timestamp - game.lastTurnTime > game.timeout) {
+            game.state = GameState.Timeout;
+            return (game.field, game.state);
+        }
+
+        // Fill in a cell
+        if (msg.sender == game.player1) {
+            game.field.values[_y][_x] = FieldValue.Cross;
+        } else {
+            game.field.values[_y][_x] = FieldValue.Nought;
+        }
+
+        // Check game state
+        _check(_gameId);
+
+        return (game.field, game.state);
     }
 
     /// @notice Get win. Can only be called by the player who won.
