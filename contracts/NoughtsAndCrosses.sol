@@ -46,7 +46,10 @@ contract NoughtsAndCrosses {
         require(
             (msg.sender == game.player1 && game.state == GameState.Player1Turn) ||
                 (msg.sender == game.player2 && game.state == GameState.Player2Turn),
-            "Only player whose turn it is now can make a move"
+            _concat(
+                "Only player whose turn it is now can make a move, current state is: ",
+                _getGameStateString(game.state)
+            )
         );
         _;
     }
@@ -92,6 +95,12 @@ contract NoughtsAndCrosses {
         return games[_gameId].field;
     }
 
+    /// @notice Get the game state string
+    /// @param _gameId The game ID
+    function getGameState(uint256 _gameId) external view returns (string memory) {
+        return _getGameStateString(games[_gameId].state);
+    }
+
     /// @notice List created games
     function listCreatedGames() external view returns (Game[] memory) {
         uint256 size = 0;
@@ -126,7 +135,7 @@ contract NoughtsAndCrosses {
         uint256 _gameId,
         uint8 _x,
         uint8 _y
-    ) external currentPlayerOnly(_gameId) verifyCoordinates(_gameId, _x, _y) returns (GameField memory, GameState) {
+    ) external currentPlayerOnly(_gameId) verifyCoordinates(_gameId, _x, _y) returns (GameField memory) {
         Game storage game = games[_gameId];
 
         // Check timeout
@@ -155,11 +164,18 @@ contract NoughtsAndCrosses {
             emit GameFinished(game.id, game.player1, game.player2, game.state);
         }
 
-        return (game.field, game.state);
+        return game.field;
     }
 
     /// @notice Get win. Can only be called by the player who won.
-    function getWin() external {}
+    function getWin() external {
+        // TODO
+    }
+
+    /// @notice Get stats
+    function getStats() external {
+        // TODO
+    }
 
     function _checkTurn(uint256 _gameId) private view returns (GameState) {
         GameField memory field = games[_gameId].field;
@@ -223,5 +239,22 @@ contract NoughtsAndCrosses {
         }
 
         return currentState;
+    }
+
+    function _concat(string memory _a, string memory _b) internal pure returns (string memory) {
+        return string(abi.encodePacked(_a, _b));
+    }
+
+    function _getGameStateString(GameState _state) internal pure returns (string memory) {
+        string[7] memory stateStrings = [
+            "Draw",
+            "Player 1 Turn",
+            "Player 2 Turn",
+            "Player 1 Win",
+            "Player 2 Win",
+            "Timeout",
+            "Waiting for Player 2 to join"
+        ];
+        return stateStrings[uint256(_state)];
     }
 }

@@ -60,5 +60,7 @@ task("make-turn", "Make turn")
         const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
         const signer = await hre.ethers.getSigner(taskArgs.account)
 
-        console.log(await noughtsAndCrosses.connect(signer).makeTurn(taskArgs.id, taskArgs.x, taskArgs.y))
+        await noughtsAndCrosses.connect(signer).makeTurn(taskArgs.id, taskArgs.x, taskArgs.y)
+        console.log(await noughtsAndCrosses.connect(signer).getGameField(taskArgs.id))
+        console.log(await noughtsAndCrosses.connect(signer).getGameState(taskArgs.id))
     })
