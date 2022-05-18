@@ -37,13 +37,16 @@ contract NoughtsAndCrosses {
 
     Game[] games;
 
-    event GameCreated(uint256 indexed id, address indexed owner);
+    event GameCreated(uint256 indexed id, address indexed player1, uint256 indexed timeout);
+    event GameStarted(uint256 indexed id, address indexed player1, address indexed player2);
+    event GameFinished(uint256 indexed id, address indexed player1, address indexed player2, GameState state);
 
     modifier currentPlayerOnly(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(
             (msg.sender == game.player1 && game.state == GameState.Player1Turn) ||
-                (msg.sender == game.player2 && game.state == GameState.Player2Turn)
+                (msg.sender == game.player2 && game.state == GameState.Player2Turn),
+            "Only player whose turn it is now can make a move"
         );
         _;
     }
@@ -74,7 +77,7 @@ contract NoughtsAndCrosses {
         Game memory game = Game(msg.sender, address(0), id, 0, _timeout, field, GameState.WaitingForPlayer2ToJoin);
         games.push(game);
 
-        emit GameCreated(game.id, game.player1);
+        emit GameCreated(game.id, game.player1, game.timeout);
     }
 
     /// @notice Get the game
@@ -111,9 +114,11 @@ contract NoughtsAndCrosses {
     /// @notice Join the specified game. A caller becomes player2 and waits for player1 to make turn
     /// @param _gameId Game to join
     function joinGame(uint256 _gameId) external stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin) {
-        games[_gameId].player2 = msg.sender;
-        games[_gameId].state = GameState.Player1Turn;
-        games[_gameId].lastTurnTime = block.timestamp;
+        Game storage game = games[_gameId];
+        game.player2 = msg.sender;
+        game.state = GameState.Player1Turn;
+        game.lastTurnTime = block.timestamp;
+        emit GameStarted(game.id, game.player1, game.player2);
     }
 
     /// @notice Make turn. Can only be called by the player whose turn it is now
@@ -122,23 +127,33 @@ contract NoughtsAndCrosses {
         uint8 _x,
         uint8 _y
     ) external currentPlayerOnly(_gameId) verifyCoordinates(_gameId, _x, _y) returns (GameField memory, GameState) {
-        Game memory game = games[_gameId];
+        Game storage game = games[_gameId];
 
         // Check timeout
         if (block.timestamp - game.lastTurnTime > game.timeout) {
             game.state = GameState.Timeout;
-            return (game.field, game.state);
         }
-
         // Fill in a cell
-        if (msg.sender == game.player1) {
-            game.field.values[_y][_x] = FieldValue.Cross;
-        } else {
-            game.field.values[_y][_x] = FieldValue.Nought;
+        else {
+            if (msg.sender == game.player1) {
+                game.field.values[_y][_x] = FieldValue.Cross;
+                game.state = GameState.Player2Turn;
+            } else {
+                game.field.values[_y][_x] = FieldValue.Nought;
+                game.state = GameState.Player1Turn;
+            }
+            game.lastTurnTime = block.timestamp;
+            game.state = _checkTurn(_gameId);
         }
 
-        // Check game state
-        _check(_gameId);
+        if (
+            game.state == GameState.Player1Win ||
+            game.state == GameState.Player2Win ||
+            game.state == GameState.Draw ||
+            game.state == GameState.Timeout
+        ) {
+            emit GameFinished(game.id, game.player1, game.player2, game.state);
+        }
 
         return (game.field, game.state);
     }
@@ -146,7 +161,7 @@ contract NoughtsAndCrosses {
     /// @notice Get win. Can only be called by the player who won.
     function getWin() external {}
 
-    function _check(uint256 _gameId) private view returns (GameState) {
+    function _checkTurn(uint256 _gameId) private view returns (GameState) {
         GameField memory field = games[_gameId].field;
         GameState currentState = games[_gameId].state;
 
