@@ -35,11 +35,16 @@ Create your tests in test folder. To set typed test, describe types in `test.con
 
 Run tests with command:
 
-```bash
-# All tests:
-$ npx hardhat test
+All tests:
 
-# Specific tests:
+```bash
+$ npx hardhat test
+```
+
+Specific tests:
+
+```bash
+$ npx hardhat test tests/NoughtsAndCrosses.test.ts
 $ npx hardhat test tests/TaskRepo.test.ts
 ```
 
@@ -56,7 +61,7 @@ npx hardhat node  # for running locally
 npx hardhat accounts
 ```
 
-**TaskRepo** contract:
+#### TaskRepo tasks
 
 ```bash
 npx hardhat create-task --estimated-time 50 --account <address> --network <network>
@@ -66,12 +71,13 @@ npx hardhat delete-task --id <task_id> --account <address> --network <network>
 npx hardhat complete-task --id <task_id> --account <address> --network <network>
 ```
 
-**NoughtsAndCrosses** contract:
+#### NoughtsAndCrosses tasks
 
 ```bash
 npx hardhat create-game --timeout 50 --account <address> --network <network>
 npx hardhat list-games --network <network>
-...
+npx hardhat join-game --id <game_id> --account <address> --network <network>
+npx hardhat make-turn --id <game_id> --x <x_coord> --y <y_coord> --account <address> --network <network>
 ```
 
 ### Deploy

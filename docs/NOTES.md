@@ -1,6 +1,7 @@
 ```bash
-# Run only TaskRepo tests
+# Run specific tests
 npx hardhat test tests/TaskRepo.test.ts
+npx hardhat test tests/NoughtsAndCrosses.test.ts
 
 # Run local network
 npx hardhat node
