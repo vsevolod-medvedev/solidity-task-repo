@@ -37,9 +37,7 @@ contract NoughtsAndCrosses {
 
     Game[] games;
 
-    event GameCreated(uint256 indexed id, address indexed player1, uint256 indexed timeout);
-    event GameStarted(uint256 indexed id, address indexed player1, address indexed player2);
-    event GameFinished(uint256 indexed id, address indexed player1, address indexed player2, GameState state);
+    event GameStateChanged(uint256 indexed id, address indexed player1, address player2, GameState indexed state);
 
     modifier currentPlayerOnly(uint256 _gameId) {
         Game memory game = games[_gameId];
@@ -80,7 +78,7 @@ contract NoughtsAndCrosses {
         Game memory game = Game(msg.sender, address(0), id, 0, _timeout, field, GameState.WaitingForPlayer2ToJoin);
         games.push(game);
 
-        emit GameCreated(game.id, game.player1, game.timeout);
+        emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
 
     /// @notice Get the game
@@ -127,7 +125,7 @@ contract NoughtsAndCrosses {
         game.player2 = msg.sender;
         game.state = GameState.Player1Turn;
         game.lastTurnTime = block.timestamp;
-        emit GameStarted(game.id, game.player1, game.player2);
+        emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
 
     /// @notice Make turn. Can only be called by the player whose turn it is now
@@ -161,7 +159,7 @@ contract NoughtsAndCrosses {
             game.state == GameState.Draw ||
             game.state == GameState.Timeout
         ) {
-            emit GameFinished(game.id, game.player1, game.player2, game.state);
+            emit GameStateChanged(game.id, game.player1, game.player2, game.state);
         }
 
         return game.field;

@@ -19,15 +19,19 @@ describe("NoughtsAndCrosses contract tests", () => {
     describe("As any user, I should be able to", () => {
         it("Create a game", async function () {
             await expect(this.NoughtsAndCrosses.connect(this.bob).createGame(10))
-                .to.emit(this.NoughtsAndCrosses, "GameCreated")
-                .withArgs(0, this.bob.address, 10)
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, this.bob.address, "0x0000000000000000000000000000000000000000", 6)
+            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal(
+                "Waiting for Player 2 to join"
+            )
         })
 
         it("Join a created game", async function () {
             await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
             await expect(this.NoughtsAndCrosses.connect(this.alice).joinGame(0))
-                .to.emit(this.NoughtsAndCrosses, "GameStarted")
-                .withArgs(0, this.bob.address, this.alice.address)
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, this.bob.address, this.alice.address, 1)
+            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 1 Turn")
         })
 
         it("Get a game", async function () {
@@ -69,7 +73,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 2, 0)
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 2)
             await expect(await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 2))
-                .to.emit(this.NoughtsAndCrosses, "GameFinished")
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 3)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 1 Win")
         })
@@ -83,7 +87,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 0, 2)
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
             await expect(await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 2))
-                .to.emit(this.NoughtsAndCrosses, "GameFinished")
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 4)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 2 Win")
         })
@@ -100,7 +104,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 2)
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 0)
             await expect(await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 1))
-                .to.emit(this.NoughtsAndCrosses, "GameFinished")
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 0)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Draw")
         })
@@ -110,7 +114,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await this.NoughtsAndCrosses.connect(this.alice).joinGame(0)
             advanceTime(51)
             await expect(await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1))
-                .to.emit(this.NoughtsAndCrosses, "GameFinished")
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 5)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Timeout")
         })
