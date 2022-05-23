@@ -79,6 +79,7 @@ npx hardhat get-game --id <game_id> --network <network>
 npx hardhat list-games --network <network>
 npx hardhat join-game --id <game_id> --account <address> --network <network>
 npx hardhat make-turn --id <game_id> --x <x_coord> --y <y_coord> --account <address> --network <network>
+npx hardhat check-game-state --id <game_id> --account <address> --network <network>
 ```
 
 ### Deploy

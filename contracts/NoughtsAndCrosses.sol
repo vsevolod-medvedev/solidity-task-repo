@@ -39,6 +39,24 @@ contract NoughtsAndCrosses {
 
     event GameStateChanged(uint256 indexed id, address indexed player1, address player2, GameState indexed state);
 
+    modifier anyPlayerTurnState(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(
+            (game.state == GameState.Player1Turn) || (game.state == GameState.Player2Turn),
+            _concat(
+                "This method can only be called when any player turn it is now, current state is: ",
+                _getGameStateString(game.state)
+            )
+        );
+        _;
+    }
+
+    modifier notTimeout(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(block.timestamp - game.lastTurnTime < game.timeout, "Time was out!");
+        _;
+    }
+
     modifier currentPlayerOnly(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(
@@ -48,6 +66,15 @@ contract NoughtsAndCrosses {
                 "Only player whose turn it is now can make a move, current state is: ",
                 _getGameStateString(game.state)
             )
+        );
+        _;
+    }
+
+    modifier playerOnly(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(
+            (msg.sender == game.player1) || (msg.sender == game.player2),
+            "This method can only be called by Player 1 or Player 2"
         );
         _;
     }
@@ -133,23 +160,38 @@ contract NoughtsAndCrosses {
         uint256 _gameId,
         uint8 _x,
         uint8 _y
-    ) external currentPlayerOnly(_gameId) verifyCoordinates(_gameId, _x, _y) returns (GameField memory) {
+    )
+        external
+        currentPlayerOnly(_gameId)
+        notTimeout(_gameId)
+        verifyCoordinates(_gameId, _x, _y)
+        returns (GameField memory)
+    {
         Game storage game = games[_gameId];
 
-        // Check timeout
+        if (msg.sender == game.player1) {
+            game.field.values[_y][_x] = FieldValue.Cross;
+            game.state = GameState.Player2Turn;
+        } else {
+            game.field.values[_y][_x] = FieldValue.Nought;
+            game.state = GameState.Player1Turn;
+        }
+        game.lastTurnTime = block.timestamp;
+
+        return game.field;
+    }
+
+    function checkGameState(uint256 _gameId)
+        external
+        anyPlayerTurnState(_gameId)
+        playerOnly(_gameId)
+        returns (GameState state)
+    {
+        Game storage game = games[_gameId];
+
         if (block.timestamp - game.lastTurnTime > game.timeout) {
             game.state = GameState.Timeout;
-        }
-        // Fill in a cell
-        else {
-            if (msg.sender == game.player1) {
-                game.field.values[_y][_x] = FieldValue.Cross;
-                game.state = GameState.Player2Turn;
-            } else {
-                game.field.values[_y][_x] = FieldValue.Nought;
-                game.state = GameState.Player1Turn;
-            }
-            game.lastTurnTime = block.timestamp;
+        } else {
             game.state = _checkTurn(_gameId);
         }
 
@@ -162,7 +204,7 @@ contract NoughtsAndCrosses {
             emit GameStateChanged(game.id, game.player1, game.player2, game.state);
         }
 
-        return game.field;
+        return game.state;
     }
 
     /// @notice Get win. Can only be called by the player who won.

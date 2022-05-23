@@ -52,5 +52,18 @@ task("make-turn", "Make turn")
 
         await noughtsAndCrosses.connect(signer).makeTurn(taskArgs.id, taskArgs.x, taskArgs.y)
         console.log(await noughtsAndCrosses.connect(signer).getGameField(taskArgs.id))
+
+        await noughtsAndCrosses.connect(signer).checkGameState(taskArgs.id)
+        console.log(await noughtsAndCrosses.connect(signer).getGameState(taskArgs.id))
+    })
+
+task("check-game-state", "Check the game state")
+    .addParam("account", "The account's address")
+    .addParam("id", "The game ID")
+    .setAction(async (taskArgs, hre) => {
+        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
+        const signer = await hre.ethers.getSigner(taskArgs.account)
+
+        await noughtsAndCrosses.connect(signer).checkGameState(taskArgs.id)
         console.log(await noughtsAndCrosses.connect(signer).getGameState(taskArgs.id))
     })
