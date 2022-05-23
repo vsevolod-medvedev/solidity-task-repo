@@ -10,7 +10,7 @@
 3. userToTasksCompletedInTimePercent - в данной переменной не учтено, что в solidity только целые числа, можно было добавить разрядность до сотых значений
 4. нужно добавить проверку require вместо данной проверки.
 
-```solidity
+```
 if (_status == task.status) {
     return;
 }
