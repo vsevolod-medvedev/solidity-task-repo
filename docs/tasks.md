@@ -12,6 +12,11 @@
 3. Добавить комиссию платформы, процент или сумма. Задается настройками в смарт-контракте.
 4. Комиссия начисляется на смарт-контракт Wallet. С Wallet можно вывести с согласия двух адресов.
 
+Ссылки:
+
+- https://ethereum-contract-security-techniques-and-tips.readthedocs.io/en/latest/known_attacks/#reentrancy
+- https://github.com/safe-global/safe-contracts (multisignature wallet)
+
 ## Задание 2 (2022.05.20)
 
 **Игра крестики-нолики.**

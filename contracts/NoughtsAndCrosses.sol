@@ -5,6 +5,9 @@ pragma solidity >=0.8.0 <0.9.0;
 /// @author Vsevolod Medvedev
 /// @notice Player can create or join a game, and once it started, do turns until win, draw or timeout
 contract NoughtsAndCrosses {
+    uint256 public minBet = 1000;
+    uint256 public maxBet = 1000000000000000;
+
     enum FieldValue {
         Empty,
         Cross,
@@ -31,6 +34,7 @@ contract NoughtsAndCrosses {
         uint256 id;
         uint256 lastTurnTime;
         uint256 timeout;
+        uint256 bet;
         GameField field;
         GameState state;
     }
@@ -84,6 +88,16 @@ contract NoughtsAndCrosses {
         _;
     }
 
+    modifier verifyBetToCreate() {
+        require(minBet <= msg.value && msg.value <= maxBet, "Bet to create is out of range");
+        _;
+    }
+
+    modifier verifyBetToJoin(uint256 _gameId) {
+        require(msg.value == games[_gameId].bet, "Bet to join must match the game bet");
+        _;
+    }
+
     modifier verifyCoordinates(
         uint256 _gameId,
         uint8 _x,
@@ -96,13 +110,22 @@ contract NoughtsAndCrosses {
 
     /// @notice Create a Noughts and Crosses game. A caller becomes player1 and waits for player2 to join
     /// @param _timeout Timeout for a turn in seconds
-    function createGame(uint256 _timeout) external {
+    function createGame(uint256 _timeout) external payable verifyBetToCreate {
         uint256 id = games.length;
 
         GameField memory field;
         for (uint256 i = 0; i < 3; i++) for (uint256 j = 0; j < 3; j++) field.values[i][j] = FieldValue.Empty;
 
-        Game memory game = Game(msg.sender, address(0), id, 0, _timeout, field, GameState.WaitingForPlayer2ToJoin);
+        Game memory game = Game(
+            msg.sender,
+            address(0),
+            id,
+            0,
+            _timeout,
+            msg.value,
+            field,
+            GameState.WaitingForPlayer2ToJoin
+        );
         games.push(game);
 
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);
@@ -147,7 +170,12 @@ contract NoughtsAndCrosses {
 
     /// @notice Join the specified game. A caller becomes player2 and waits for player1 to make turn
     /// @param _gameId Game to join
-    function joinGame(uint256 _gameId) external stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin) {
+    function joinGame(uint256 _gameId)
+        external
+        payable
+        stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin)
+        verifyBetToJoin(_gameId)
+    {
         Game storage game = games[_gameId];
         game.player2 = msg.sender;
         game.state = GameState.Player1Turn;
@@ -194,6 +222,15 @@ contract NoughtsAndCrosses {
         } else {
             game.state = _checkTurn(_gameId);
         }
+
+        //        if (game.state == GameState.Player1Win) {
+        //            payable(game.player1).transfer(sum);
+        //        } else if (game.state == GameState.Player2Win) {
+        //            payable(game.player2).transfer(sum);
+        //        } else if (game.state == GameState.Draw || game.state == GameState.Timeout) {
+        //            payable(game.player1).transfer(sum / 2);
+        //            payable(game.player2).transfer(sum / 2);
+        //        }
 
         if (
             game.state == GameState.Player1Win ||

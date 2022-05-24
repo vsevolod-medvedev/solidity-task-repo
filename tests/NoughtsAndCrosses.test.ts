@@ -18,7 +18,7 @@ describe("NoughtsAndCrosses contract tests", () => {
 
     describe("As any user, I should be able to", () => {
         it("Create a game", async function () {
-            await expect(this.NoughtsAndCrosses.connect(this.bob).createGame(10))
+            await expect(this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 }))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, "0x0000000000000000000000000000000000000000", 6)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal(
@@ -27,28 +27,29 @@ describe("NoughtsAndCrosses contract tests", () => {
         })
 
         it("Join a created game", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
-            await expect(this.NoughtsAndCrosses.connect(this.alice).joinGame(0))
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+            await expect(this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 }))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 1)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 1 Turn")
         })
 
         it("Get a game", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
 
             const game = await this.NoughtsAndCrosses.connect(this.carol).getGame(0)
 
             expect(game.id).to.equal(0)
             expect(game.player1).to.equal(this.bob.address)
             expect(game.timeout).to.equal(10)
+            expect(game.bet).to.equal(3000)
             expect(game.state).to.equal(6)
             //expect(game.field).to.equal([[0,0,0], [0,0,0], [0,0,0]])
         })
 
         it("List games", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
-            await this.NoughtsAndCrosses.connect(this.alice).createGame(15)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(this.alice).createGame(15, { value: 5000 })
 
             const games = await this.NoughtsAndCrosses.connect(this.carol).listCreatedGames()
 
@@ -56,16 +57,18 @@ describe("NoughtsAndCrosses contract tests", () => {
             expect(games[0].id).to.equal(0)
             expect(games[0].player1).to.equal(this.bob.address)
             expect(games[0].timeout).to.equal(10)
+            expect(games[0].bet).to.equal(3000)
             expect(games[1].id).to.equal(1)
             expect(games[1].player1).to.equal(this.alice.address)
             expect(games[1].timeout).to.equal(15)
+            expect(games[1].bet).to.equal(5000)
         })
     })
 
     describe("Full game scenarios", () => {
         it("Player 1 wins", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 2)
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 2, 1)
@@ -80,8 +83,8 @@ describe("NoughtsAndCrosses contract tests", () => {
         })
 
         it("Player 2 wins", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 1)
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 2)
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 0)
@@ -95,8 +98,8 @@ describe("NoughtsAndCrosses contract tests", () => {
         })
 
         it("Draw", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10)
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
             await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 1)
             await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 0)
@@ -113,8 +116,8 @@ describe("NoughtsAndCrosses contract tests", () => {
         })
 
         it("Timeout", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(50)
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0)
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(50, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
             advanceTime(51)
             await expect(this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)).to.be.revertedWith("Time was out!")
             await expect(await this.NoughtsAndCrosses.connect(this.bob).checkGameState(0))
