@@ -80,6 +80,13 @@ describe("NoughtsAndCrosses contract tests", () => {
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, this.bob.address, this.alice.address, 3)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 1 Win")
+
+            //const bobBalanceBefore = await ethers.provider.getBalance(this.bob.address)
+            await expect(await this.NoughtsAndCrosses.connect(this.bob).getWin(0))
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, this.bob.address, this.alice.address, 7)
+            //const bobBalanceAfter = await ethers.provider.getBalance(this.bob.address)
+            //expect(bobBalanceAfter - bobBalanceBefore).to.equal(6000)
         })
 
         it("Player 2 wins", async function () {

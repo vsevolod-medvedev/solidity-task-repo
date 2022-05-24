@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0 <0.9.0;
 
+//import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
 /// @title Noughts and Crosses classical game (the test task for iLink Academy, 2022)
 /// @author Vsevolod Medvedev
 /// @notice Player can create or join a game, and once it started, do turns until win, draw or timeout
 contract NoughtsAndCrosses {
+    uint256 public feeBps = 100; // In basis points (1 BPS = 0.01%)
     uint256 public minBet = 1000;
     uint256 public maxBet = 1000000000000000;
 
@@ -15,13 +18,14 @@ contract NoughtsAndCrosses {
     }
 
     enum GameState {
-        Draw,
-        Player1Turn,
-        Player2Turn,
-        Player1Win,
-        Player2Win,
-        Timeout,
-        WaitingForPlayer2ToJoin
+        Draw, // 0
+        Player1Turn, // 1
+        Player2Turn, // 2
+        Player1Win, // 3
+        Player2Win, // 4
+        Timeout, // 5
+        WaitingForPlayer2ToJoin, // 6
+        Closed // 7
     }
 
     struct GameField {
@@ -42,18 +46,6 @@ contract NoughtsAndCrosses {
     Game[] games;
 
     event GameStateChanged(uint256 indexed id, address indexed player1, address player2, GameState indexed state);
-
-    modifier anyPlayerTurnState(uint256 _gameId) {
-        Game memory game = games[_gameId];
-        require(
-            (game.state == GameState.Player1Turn) || (game.state == GameState.Player2Turn),
-            _concat(
-                "This method can only be called when any player turn it is now, current state is: ",
-                _getGameStateString(game.state)
-            )
-        );
-        _;
-    }
 
     modifier notTimeout(uint256 _gameId) {
         Game memory game = games[_gameId];
@@ -83,6 +75,30 @@ contract NoughtsAndCrosses {
         _;
     }
 
+    modifier stateIsAnyPlayerTurn(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(
+            (game.state == GameState.Player1Turn) || (game.state == GameState.Player2Turn),
+            _concat(
+                "This method can only be called when any player turn it is now, current state is: ",
+                _getGameStateString(game.state)
+            )
+        );
+        _;
+    }
+
+    modifier stateIsGameEnded(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(
+            (game.state == GameState.Player1Win ||
+                game.state == GameState.Player2Win ||
+                game.state == GameState.Draw ||
+                game.state == GameState.Timeout),
+            _concat("The game is not ended, current state is: ", _getGameStateString(game.state))
+        );
+        _;
+    }
+
     modifier stateOnly(uint256 _gameId, GameState _state) {
         require(games[_gameId].state == _state, "The game is in another state");
         _;
@@ -108,6 +124,16 @@ contract NoughtsAndCrosses {
         _;
     }
 
+    /// @notice Function to receive Ether. msg.data must be empty
+    receive() external payable {}
+
+    /// @notice Fallback function is called when msg.data is not empty
+    fallback() external payable {}
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
     /// @notice Create a Noughts and Crosses game. A caller becomes player1 and waits for player2 to join
     /// @param _timeout Timeout for a turn in seconds
     function createGame(uint256 _timeout) external payable verifyBetToCreate {
@@ -127,6 +153,9 @@ contract NoughtsAndCrosses {
             GameState.WaitingForPlayer2ToJoin
         );
         games.push(game);
+
+        (bool sent, ) = address(this).call{value: msg.value}("");
+        require(sent, "Failed to place a bet");
 
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
@@ -180,6 +209,10 @@ contract NoughtsAndCrosses {
         game.player2 = msg.sender;
         game.state = GameState.Player1Turn;
         game.lastTurnTime = block.timestamp;
+
+        (bool sent, ) = address(this).call{value: msg.value}("");
+        require(sent, "Failed to place a bet");
+
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
 
@@ -211,7 +244,7 @@ contract NoughtsAndCrosses {
 
     function checkGameState(uint256 _gameId)
         external
-        anyPlayerTurnState(_gameId)
+        stateIsAnyPlayerTurn(_gameId)
         playerOnly(_gameId)
         returns (GameState state)
     {
@@ -222,15 +255,6 @@ contract NoughtsAndCrosses {
         } else {
             game.state = _checkTurn(_gameId);
         }
-
-        //        if (game.state == GameState.Player1Win) {
-        //            payable(game.player1).transfer(sum);
-        //        } else if (game.state == GameState.Player2Win) {
-        //            payable(game.player2).transfer(sum);
-        //        } else if (game.state == GameState.Draw || game.state == GameState.Timeout) {
-        //            payable(game.player1).transfer(sum / 2);
-        //            payable(game.player2).transfer(sum / 2);
-        //        }
 
         if (
             game.state == GameState.Player1Win ||
@@ -244,9 +268,33 @@ contract NoughtsAndCrosses {
         return game.state;
     }
 
-    /// @notice Get win. Can only be called by the player who won.
-    function getWin() external {
-        // TODO
+    /// @notice Get win. Can only be called by the player who won or if game is ended in a draw/timeout
+    function getWin(uint256 _gameId) external stateIsGameEnded(_gameId) playerOnly(_gameId) {
+        Game storage game = games[_gameId];
+
+        game.state = GameState.Closed;
+
+        uint256 game_bet = game.bet * 2;
+        uint256 fee = (game_bet * feeBps) / 10000;
+        uint256 prize = games[_gameId].bet * 2 - fee;
+
+        // TODO: Send fee to wallet
+
+        if (game.state == GameState.Player1Win) {
+            (bool sent, ) = payable(game.player1).call{value: prize}("");
+            require(sent, "Failed to send prize");
+        } else if (game.state == GameState.Player2Win) {
+            (bool sent, ) = payable(game.player2).call{value: prize}("");
+            require(sent, "Failed to send prize");
+        } else if (game.state == GameState.Draw || game.state == GameState.Timeout) {
+            uint256 prize_half1 = prize / 2;
+            uint256 prize_half2 = prize - prize_half1;
+            (bool sent1, ) = payable(game.player1).call{value: prize_half1}("");
+            (bool sent2, ) = payable(game.player2).call{value: prize_half2}("");
+            require(sent1 && sent2, "Failed to send prizes");
+        }
+
+        emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
 
     /// @notice Get stats
