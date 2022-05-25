@@ -73,8 +73,16 @@ contract MultiSigWallet {
         numConfirmationsRequired = _numConfirmationsRequired;
     }
 
+    /// @notice Function to receive Ether. msg.data must be empty
     receive() external payable {
         emit Deposit(msg.sender, msg.value, address(this).balance);
+    }
+
+    /// @notice Fallback function is called when msg.data is not empty
+    fallback() external payable {}
+
+    function getBalance() external view returns (uint256) {
+        return address(this).balance;
     }
 
     function submitTransaction(

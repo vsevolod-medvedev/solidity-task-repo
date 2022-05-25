@@ -10,6 +10,7 @@ contract NoughtsAndCrosses {
     uint256 public feeBps = 100; // In basis points (1 BPS = 0.01%)
     uint256 public minBet = 1000;
     uint256 public maxBet = 1000000000000000;
+    address public wallet = address(0);
 
     enum FieldValue {
         Empty,
@@ -122,6 +123,10 @@ contract NoughtsAndCrosses {
         require(_x >= 0 && _x <= 2 && _y >= 0 && _y <= 2, "Coordinates are out of range");
         require(games[_gameId].field.values[_y][_x] == FieldValue.Empty, "The cell is already filled");
         _;
+    }
+
+    constructor(address _multiSigWallet) {
+        wallet = _multiSigWallet;
     }
 
     /// @notice Function to receive Ether. msg.data must be empty
@@ -273,20 +278,24 @@ contract NoughtsAndCrosses {
         uint256 fee = (game_bet * feeBps) / 10000;
         uint256 prize = games[_gameId].bet * 2 - fee;
 
-        // TODO: Send fee to wallet
+        // Send fee to Multi-Sig Wallet
+        bool sent;
+        (sent, ) = payable(wallet).call{value: fee}("");
+        require(sent, "Failed to send fee to wallet");
 
+        // Send prize to players
         if (savedState == GameState.Player1Win) {
-            (bool sent, ) = payable(game.player1).call{value: prize}("");
-            require(sent, "Failed to send prize");
+            (sent, ) = payable(game.player1).call{value: prize}("");
+            require(sent, "Failed to send prize to Player 1");
         } else if (savedState == GameState.Player2Win) {
-            (bool sent, ) = payable(game.player2).call{value: prize}("");
-            require(sent, "Failed to send prize");
+            (sent, ) = payable(game.player2).call{value: prize}("");
+            require(sent, "Failed to send prize to Player 2");
         } else if (savedState == GameState.Draw || savedState == GameState.Timeout) {
             uint256 prize_half1 = prize / 2;
             uint256 prize_half2 = prize - prize_half1;
             (bool sent1, ) = payable(game.player1).call{value: prize_half1}("");
             (bool sent2, ) = payable(game.player2).call{value: prize_half2}("");
-            require(sent1 && sent2, "Failed to send prizes");
+            require(sent1 && sent2, "Failed to send prizes to players");
         }
 
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);

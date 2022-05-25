@@ -1,5 +1,5 @@
 import { expect, use } from "chai"
-import { ethers, waffle } from "hardhat"
+import { deployments, ethers, waffle } from "hardhat"
 import { prepareSigners } from "./utils/prepare"
 import { advanceTime } from "./utils/time"
 
@@ -7,13 +7,15 @@ use(waffle.solidity)
 
 describe("NoughtsAndCrosses contract tests", () => {
     beforeEach(async function () {
-        const NoughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
-        this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy()
-        await this.NoughtsAndCrosses.deployed()
-
         await prepareSigners(this)
 
-        this.timestamp = (await ethers.provider.getBlock("latest")).timestamp
+        const { deploy } = deployments
+
+        const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet")
+        this.MultiSigWallet = await MultiSigWalletFactory.deploy([this.misha.address, this.tema.address], 2)
+
+        const NoughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
+        this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy(this.MultiSigWallet.address)
     })
 
     describe("As any user, I should be able to", () => {
@@ -67,74 +69,87 @@ describe("NoughtsAndCrosses contract tests", () => {
 
     describe("Full game scenarios", () => {
         it("Player 1 wins", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 2, 1)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 0, 1)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 2, 0)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 2)
-            await expect(await this.NoughtsAndCrosses.connect(this.bob).checkGameState(0))
-                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, this.alice.address, 3)
-            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 1 Win")
+            const player1 = this.bob
+            const player2 = this.alice
+            //const player1BalanceBefore = await ethers.provider.getBalance(player1.address)
+            //const player2BalanceBefore = await ethers.provider.getBalance(player2.address)
 
-            //const bobBalanceBefore = await ethers.provider.getBalance(this.bob.address)
+            await this.NoughtsAndCrosses.connect(player1).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player2).joinGame(0, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 1, 1)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 1, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 2, 1)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 0, 1)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 2, 0)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 2, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 0, 2)
+            await expect(await this.NoughtsAndCrosses.connect(player1).checkGameState(0))
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, player1.address, player2.address, 3)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Player 1 Win")
             expect(await this.NoughtsAndCrosses.getBalance()).to.equal(6000)
 
-            await expect(await this.NoughtsAndCrosses.connect(this.bob).getWin(0))
+            await expect(await this.NoughtsAndCrosses.connect(player1).getWin(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, this.alice.address, 7)
+                .withArgs(0, player1.address, player2.address, 7)
 
-            //expect(await this.NoughtsAndCrosses.getBalance()).to.equal(0)
-            //const bobBalanceAfter = await ethers.provider.getBalance(this.bob.address)
-            //expect(bobBalanceAfter - bobBalanceBefore).to.equal(6000)
+            expect(await this.NoughtsAndCrosses.getBalance()).to.equal(0)
+            expect(await this.MultiSigWallet.getBalance()).to.equal(60)
+            //expect(await ethers.provider.getBalance(player1.address)).to.equal(player1BalanceBefore.add(3000 - 60))
+            //expect(await ethers.provider.getBalance(player2.address)).to.equal(player2BalanceBefore.sub(3000))
         })
 
         it("Player 2 wins", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 1)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 0)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 0, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 2)
-            await expect(await this.NoughtsAndCrosses.connect(this.bob).checkGameState(0))
+            const player1 = this.bob
+            const player2 = this.alice
+
+            await this.NoughtsAndCrosses.connect(player1).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player2).joinGame(0, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 0, 1)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 2, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 0, 0)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 0, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 1, 1)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 1, 2)
+            await expect(await this.NoughtsAndCrosses.connect(player1).checkGameState(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, this.alice.address, 4)
-            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Player 2 Win")
+                .withArgs(0, player1.address, player2.address, 4)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Player 2 Win")
         })
 
         it("Draw", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 1)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 0)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 2, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 2, 0)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 0, 2)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 2)
-            await this.NoughtsAndCrosses.connect(this.alice).makeTurn(0, 1, 0)
-            await this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 0, 1)
-            await expect(await this.NoughtsAndCrosses.connect(this.alice).checkGameState(0))
+            const player1 = this.bob
+            const player2 = this.alice
+
+            await this.NoughtsAndCrosses.connect(player1).createGame(10, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player2).joinGame(0, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 1, 1)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 2, 1)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 0, 0)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 2, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 2, 0)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 0, 2)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 1, 2)
+            await this.NoughtsAndCrosses.connect(player2).makeTurn(0, 1, 0)
+            await this.NoughtsAndCrosses.connect(player1).makeTurn(0, 0, 1)
+            await expect(await this.NoughtsAndCrosses.connect(player2).checkGameState(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, this.alice.address, 0)
-            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Draw")
+                .withArgs(0, player1.address, player2.address, 0)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Draw")
         })
 
         it("Timeout", async function () {
-            await this.NoughtsAndCrosses.connect(this.bob).createGame(50, { value: 3000 })
-            await this.NoughtsAndCrosses.connect(this.alice).joinGame(0, { value: 3000 })
+            const player1 = this.bob
+            const player2 = this.alice
+
+            await this.NoughtsAndCrosses.connect(player1).createGame(50, { value: 3000 })
+            await this.NoughtsAndCrosses.connect(player2).joinGame(0, { value: 3000 })
             advanceTime(51)
-            await expect(this.NoughtsAndCrosses.connect(this.bob).makeTurn(0, 1, 1)).to.be.revertedWith("Time was out!")
-            await expect(await this.NoughtsAndCrosses.connect(this.bob).checkGameState(0))
+            await expect(this.NoughtsAndCrosses.connect(player1).makeTurn(0, 1, 1)).to.be.revertedWith("Time was out!")
+            await expect(await this.NoughtsAndCrosses.connect(player1).checkGameState(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, this.alice.address, 5)
-            expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal("Timeout")
+                .withArgs(0, player1.address, player2.address, 5)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Timeout")
         })
     })
 
