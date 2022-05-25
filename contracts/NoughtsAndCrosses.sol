@@ -130,7 +130,7 @@ contract NoughtsAndCrosses {
     /// @notice Fallback function is called when msg.data is not empty
     fallback() external payable {}
 
-    function getBalance() public view returns (uint256) {
+    function getBalance() external view returns (uint256) {
         return address(this).balance;
     }
 
@@ -153,9 +153,6 @@ contract NoughtsAndCrosses {
             GameState.WaitingForPlayer2ToJoin
         );
         games.push(game);
-
-        (bool sent, ) = address(this).call{value: msg.value}("");
-        require(sent, "Failed to place a bet");
 
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
@@ -209,9 +206,6 @@ contract NoughtsAndCrosses {
         game.player2 = msg.sender;
         game.state = GameState.Player1Turn;
         game.lastTurnTime = block.timestamp;
-
-        (bool sent, ) = address(this).call{value: msg.value}("");
-        require(sent, "Failed to place a bet");
 
         emit GameStateChanged(game.id, game.player1, game.player2, game.state);
     }
@@ -272,6 +266,7 @@ contract NoughtsAndCrosses {
     function getWin(uint256 _gameId) external stateIsGameEnded(_gameId) playerOnly(_gameId) {
         Game storage game = games[_gameId];
 
+        GameState savedState = game.state;
         game.state = GameState.Closed;
 
         uint256 game_bet = game.bet * 2;
@@ -280,13 +275,13 @@ contract NoughtsAndCrosses {
 
         // TODO: Send fee to wallet
 
-        if (game.state == GameState.Player1Win) {
+        if (savedState == GameState.Player1Win) {
             (bool sent, ) = payable(game.player1).call{value: prize}("");
             require(sent, "Failed to send prize");
-        } else if (game.state == GameState.Player2Win) {
+        } else if (savedState == GameState.Player2Win) {
             (bool sent, ) = payable(game.player2).call{value: prize}("");
             require(sent, "Failed to send prize");
-        } else if (game.state == GameState.Draw || game.state == GameState.Timeout) {
+        } else if (savedState == GameState.Draw || savedState == GameState.Timeout) {
             uint256 prize_half1 = prize / 2;
             uint256 prize_half2 = prize - prize_half1;
             (bool sent1, ) = payable(game.player1).call{value: prize_half1}("");
