@@ -11,8 +11,14 @@ describe("NoughtsAndCrosses contract tests", () => {
 
         const { deploy } = deployments
 
+        this.walletOwner1 = this.misha
+        this.walletOwner2 = this.tema
+
         const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet")
-        this.MultiSigWallet = await MultiSigWalletFactory.deploy([this.misha.address, this.tema.address], 2)
+        this.MultiSigWallet = await MultiSigWalletFactory.deploy(
+            [this.walletOwner1.address, this.walletOwner2.address],
+            2
+        )
 
         const NoughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
         this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy(this.MultiSigWallet.address)
@@ -89,14 +95,21 @@ describe("NoughtsAndCrosses contract tests", () => {
             expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Player 1 Win")
             expect(await this.NoughtsAndCrosses.getBalance()).to.equal(6000)
 
+            // Pay prizes and fee
             await expect(await this.NoughtsAndCrosses.connect(player1).getWin(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, player1.address, player2.address, 7)
-
             expect(await this.NoughtsAndCrosses.getBalance()).to.equal(0)
             expect(await this.MultiSigWallet.getBalance()).to.equal(60)
             //expect(await ethers.provider.getBalance(player1.address)).to.equal(player1BalanceBefore.add(3000 - 60))
             //expect(await ethers.provider.getBalance(player2.address)).to.equal(player2BalanceBefore.sub(3000))
+
+            // Send the game fee from wallet to walletOwner1
+            await this.MultiSigWallet.connect(this.walletOwner1).submitTransaction(this.walletOwner1.address, 60, 0)
+            await this.MultiSigWallet.connect(this.walletOwner1).confirmTransaction(0)
+            await this.MultiSigWallet.connect(this.walletOwner2).confirmTransaction(0)
+            await this.MultiSigWallet.connect(this.walletOwner1).executeTransaction(0)
+            expect(await this.MultiSigWallet.getBalance()).to.equal(0)
         })
 
         it("Player 2 wins", async function () {
