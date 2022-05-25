@@ -80,6 +80,8 @@ const config: HardhatUserConfig = {
     namedAccounts: {
         deployer: 0,
         admin: 1,
+        walletOwner1: 2,
+        walletOwner2: 3,
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY || "API_KEY_WEB",
