@@ -2,15 +2,16 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 //import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 /// @title Noughts and Crosses classical game (the test task for iLink Academy, 2022)
 /// @author Vsevolod Medvedev
 /// @notice Player can create or join a game, and once it started, do turns until win, draw or timeout
-contract NoughtsAndCrosses {
-    uint256 public feeBps = 100; // In basis points (1 BPS = 0.01%)
-    uint256 public minBet = 1000;
-    uint256 public maxBet = 1000000000000000;
-    address public wallet = address(0);
+contract NoughtsAndCrosses is Initializable {
+    uint256 public feeBps; // In basis points (1 BPS = 0.01%)
+    uint256 public minBet;
+    uint256 public maxBet;
+    address public wallet;
 
     enum FieldValue {
         Empty,
@@ -125,8 +126,16 @@ contract NoughtsAndCrosses {
         _;
     }
 
-    constructor(address _multiSigWallet) {
+    // @custom:oz-upgrades-unsafe-allow constructor
+    //    constructor() {
+    //        _disableInitializers();
+    //    }
+
+    function initialize(address _multiSigWallet) public initializer {
         wallet = _multiSigWallet;
+        feeBps = 100; // In basis points (1 BPS = 0.01%)
+        minBet = 1000;
+        maxBet = 1000000000000000;
     }
 
     /// @notice Function to receive Ether. msg.data must be empty

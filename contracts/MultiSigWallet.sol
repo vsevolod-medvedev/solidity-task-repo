@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
 /// @title Multi-Sig Wallet from the docs: https://solidity-by-example.org/app/multi-sig-wallet
 /// @author Solidity by Example
-contract MultiSigWallet {
+contract MultiSigWallet is Initializable {
     event Deposit(address indexed sender, uint256 amount, uint256 balance);
     event SubmitTransaction(
         address indexed owner,
@@ -53,7 +55,12 @@ contract MultiSigWallet {
         _;
     }
 
-    constructor(address[] memory _owners, uint256 _numConfirmationsRequired) {
+    // @custom:oz-upgrades-unsafe-allow constructor
+    //    constructor() {
+    //        _disableInitializers();
+    //    }
+
+    function initialize(address[] memory _owners, uint256 _numConfirmationsRequired) public initializer {
         require(_owners.length > 0, "owners required");
         require(
             _numConfirmationsRequired > 0 && _numConfirmationsRequired <= _owners.length,
