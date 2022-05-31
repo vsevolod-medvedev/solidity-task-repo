@@ -11,25 +11,10 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
     var balance = await ethers.provider.getBalance(deployer)
     console.log(`Deployer: ${deployer} , balance: ${ethers.utils.formatEther(balance)} `)
 
-    const multiSigWallet = await deploy("MultiSigWallet", {
-        contract: "MultiSigWallet",
-        from: deployer,
-        log: true,
-        proxy: {
-            owner: proxyAdminOwner,
-            proxyContract: "OpenZeppelinTransparentProxy",
-            execute: {
-                init: {
-                    methodName: "initialize",
-                    args: [[walletOwner1, walletOwner2], 2],
-                },
-            },
-        },
-    })
+    // 1. Get dependencies contracts
+    const multiSigWallet = await deployments.get("MultiSigWallet")
 
-    balance = await ethers.provider.getBalance(deployer)
-    console.log(`Deployer: ${deployer} , balance: ${ethers.utils.formatEther(balance)} `)
-
+    // 2. Deploy main contract
     await deploy("NoughtsAndCrosses", {
         contract: "NoughtsAndCrosses",
         from: deployer,
@@ -48,3 +33,4 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
 }
 
 module.exports.tags = ["NoughtsAndCrosses"]
+module.exports.dependencies = ["MultiSigWallet"]

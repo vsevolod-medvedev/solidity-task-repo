@@ -87,13 +87,19 @@ npx hardhat check-game-state --id <game_id> --account <address> --network <netwo
 Run deploy in hardhat network
 
 ```bash
-$ npx hardhat deploy
+npx hardhat deploy
+```
+
+Deploy specific contracts by tags (with dependencies):
+
+```bash
+npx hardhat deploy --tags NoughtsAndCrosses
 ```
 
 Run deploy in ropsten network
 
 ```bash
-$ npm run deploy:ropsten
+npm run deploy:ropsten
 ```
 
 Run deploy in ropsten network for new contract
