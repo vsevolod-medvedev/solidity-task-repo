@@ -47,6 +47,7 @@ contract NoughtsAndCrosses is Initializable {
 
     Game[] games;
 
+    event Deposit(address indexed caller, uint256 indexed amount, uint256 balance, string indexed message);
     event GameStateChanged(uint256 indexed id, address indexed player1, address player2, GameState indexed state);
 
     modifier notTimeout(uint256 _gameId) {
@@ -139,10 +140,14 @@ contract NoughtsAndCrosses is Initializable {
     }
 
     /// @notice Function to receive Ether. msg.data must be empty
-    receive() external payable {}
+    receive() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance, "Received was called");
+    }
 
     /// @notice Fallback function is called when msg.data is not empty
-    fallback() external payable {}
+    fallback() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance, "Fallback was called");
+    }
 
     function getBalance() external view returns (uint256) {
         return address(this).balance;

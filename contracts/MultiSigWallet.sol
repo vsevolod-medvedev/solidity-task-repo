@@ -6,7 +6,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 /// @title Multi-Sig Wallet from the docs: https://solidity-by-example.org/app/multi-sig-wallet
 /// @author Solidity by Example
 contract MultiSigWallet is Initializable {
-    event Deposit(address indexed sender, uint256 amount, uint256 balance);
+    event Deposit(address indexed sender, uint256 indexed amount, uint256 balance, string indexed message);
     event SubmitTransaction(
         address indexed owner,
         uint256 indexed txIndex,
@@ -17,6 +17,7 @@ contract MultiSigWallet is Initializable {
     event ConfirmTransaction(address indexed owner, uint256 indexed txIndex);
     event RevokeConfirmation(address indexed owner, uint256 indexed txIndex);
     event ExecuteTransaction(address indexed owner, uint256 indexed txIndex);
+    event Received(address caller, uint256 amount, string message);
 
     address[] public owners;
     mapping(address => bool) public isOwner;
@@ -82,11 +83,13 @@ contract MultiSigWallet is Initializable {
 
     /// @notice Function to receive Ether. msg.data must be empty
     receive() external payable {
-        emit Deposit(msg.sender, msg.value, address(this).balance);
+        emit Deposit(msg.sender, msg.value, address(this).balance, "Received was called");
     }
 
     /// @notice Fallback function is called when msg.data is not empty
-    fallback() external payable {}
+    fallback() external payable {
+        emit Deposit(msg.sender, msg.value, address(this).balance, "Fallback was called");
+    }
 
     function getBalance() external view returns (uint256) {
         return address(this).balance;
