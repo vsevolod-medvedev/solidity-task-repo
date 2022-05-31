@@ -126,3 +126,7 @@ $ npm run verify:ropsten
    https://docs.soliditylang.org/en/v0.8.13/common-patterns.html
 4. Security Considerations:
    https://docs.soliditylang.org/en/v0.8.13/security-considerations.html#security-considerations
+5. Solidity by Example:
+   https://solidity-by-example.org/sending-ether
+6. Proxy Upgrade Pattern:
+   https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies

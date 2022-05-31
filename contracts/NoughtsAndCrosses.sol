@@ -194,6 +194,10 @@ contract NoughtsAndCrosses is Initializable {
         return _getGameStateString(games[_gameId].state);
     }
 
+    function getLastCreatedGameId() external view returns (uint256) {
+        return games.length - 1;
+    }
+
     /// @notice List created games
     function listCreatedGames() external view returns (Game[] memory) {
         uint256 size = 0;
@@ -389,14 +393,15 @@ contract NoughtsAndCrosses is Initializable {
     }
 
     function _getGameStateString(GameState _state) internal pure returns (string memory) {
-        string[7] memory stateStrings = [
+        string[8] memory stateStrings = [
             "Draw",
             "Player 1 Turn",
             "Player 2 Turn",
             "Player 1 Win",
             "Player 2 Win",
             "Timeout",
-            "Waiting for Player 2 to join"
+            "Waiting for Player 2 to join",
+            "Closed"
         ];
         return stateStrings[uint256(_state)];
     }

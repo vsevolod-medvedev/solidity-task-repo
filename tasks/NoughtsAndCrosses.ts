@@ -69,3 +69,56 @@ task("check-game-state", "Check the game state")
         await noughtsAndCrosses.connect(signer).checkGameState(taskArgs.id)
         console.log(await noughtsAndCrosses.connect(signer).getGameState(taskArgs.id))
     })
+
+task("get-win", "Get win")
+    .addParam("account", "The account's address")
+    .addParam("id", "The game ID")
+    .setAction(async (taskArgs, hre) => {
+        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
+        const signer = await hre.ethers.getSigner(taskArgs.account)
+
+        await noughtsAndCrosses.connect(signer).getWin(taskArgs.id)
+        console.log(await noughtsAndCrosses.connect(signer).getGameState(taskArgs.id))
+    })
+
+task("quick-game", "Run quick game")
+    .addParam("player1", "The Player 1 address")
+    .addParam("player2", "The Player 2 address")
+    .addParam("timeout", "Timeout for a turn, in seconds")
+    .addParam("bet", "The game bet, in Wei")
+    .setAction(async (taskArgs, hre) => {
+        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
+        const player1 = await hre.ethers.getSigner(taskArgs.player1)
+        const player2 = await hre.ethers.getSigner(taskArgs.player2)
+
+        await noughtsAndCrosses.connect(player1).createGame(taskArgs.timeout, { value: taskArgs.bet })
+        const gameId = await noughtsAndCrosses.getLastCreatedGameId()
+        console.log(`Game ID: ${gameId}`)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+
+        await noughtsAndCrosses.connect(player2).joinGame(gameId, { value: taskArgs.bet })
+        console.log(await noughtsAndCrosses.connect(player2).getGameState(gameId))
+
+        await noughtsAndCrosses.connect(player1).makeTurn(gameId, 1, 1)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player2).makeTurn(gameId, 1, 2)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player1).makeTurn(gameId, 2, 1)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player2).makeTurn(gameId, 0, 1)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player1).makeTurn(gameId, 2, 0)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player2).makeTurn(gameId, 2, 2)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+        await noughtsAndCrosses.connect(player1).makeTurn(gameId, 0, 2)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+
+        await noughtsAndCrosses.connect(player1).checkGameState(gameId)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+
+        await noughtsAndCrosses.connect(player1).getWin(gameId)
+        console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
+
+        console.log(await noughtsAndCrosses.connect(player1).getGameField(gameId))
+    })

@@ -15,13 +15,12 @@ describe("NoughtsAndCrosses contract tests", () => {
         this.walletOwner2 = this.tema
 
         const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet")
-        this.MultiSigWallet = await MultiSigWalletFactory.deploy(
-            [this.walletOwner1.address, this.walletOwner2.address],
-            2
-        )
+        this.MultiSigWallet = await MultiSigWalletFactory.deploy()
+        this.MultiSigWallet.initialize([this.walletOwner1.address, this.walletOwner2.address], 2)
 
         const NoughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
-        this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy(this.MultiSigWallet.address)
+        this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy()
+        this.NoughtsAndCrosses.initialize(this.MultiSigWallet.address)
     })
 
     describe("As any user, I should be able to", () => {
@@ -99,6 +98,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await expect(await this.NoughtsAndCrosses.connect(player1).getWin(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, player1.address, player2.address, 7)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Closed")
             expect(await this.NoughtsAndCrosses.getBalance()).to.equal(0)
             expect(await this.MultiSigWallet.getBalance()).to.equal(60)
             //expect(await ethers.provider.getBalance(player1.address)).to.equal(player1BalanceBefore.add(3000 - 60))
