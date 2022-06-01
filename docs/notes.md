@@ -11,6 +11,14 @@ npx hardhat test tests/NoughtsAndCrosses.test.ts
 npx hardhat node
 ```
 
+## Deploy
+
+```bash
+npx hardhat run deploy/NoughtsAndCrosses.ts --network rinkeby
+# or
+npx hardhat deploy --network rinkeby
+```
+
 ## Run tasks in local network
 
 ### TaskRepo
@@ -29,6 +37,8 @@ npx hardhat delete-task --id 0 --network localhost
 ### NaughtsAndCrosses game
 
 ```
+npx hardhat upgrade-game --proxy 0xEF443E6e35c20686ff1D1666580C5A47274b7802 --network localhost
+
 npx hardhat quick-game --player1 0x590928e30103457a584465e31DF5CCd97109ACe8 --player2 0x09934701f5c76250feafee70bca144ebf97b0a02 --timeout 5 --bet 1000 --network localhost
 
 npx hardhat list-games --network localhost
