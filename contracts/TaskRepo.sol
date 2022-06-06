@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.7.0 <0.9.0;
+pragma solidity 0.8.12;
 
 /// @title The test task for iLink Academy, 2022
 /// @author Vsevolod Medvedev
@@ -89,7 +89,12 @@ contract TaskRepo {
     /// @notice Change a task status (owner only)
     /// @param _id Task ID
     /// @param _status New status
-    function changeTaskStatus(uint256 _id, Status _status) external ownerOnly(_id) notDeleted(_id) notStatus(_id, _status) {
+    function changeTaskStatus(uint256 _id, Status _status)
+        external
+        ownerOnly(_id)
+        notDeleted(_id)
+        notStatus(_id, _status)
+    {
         Task storage task = tasks[_id];
         task.status = _status;
         if (_status == Status.Completed) {

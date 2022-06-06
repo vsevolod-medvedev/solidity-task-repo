@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0
-pragma solidity >=0.8.0 <0.9.0;
+pragma solidity 0.8.12;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
@@ -24,9 +24,11 @@ contract NoughtsAndCrosses is Initializable {
         Player2Turn, // 2
         Player1Win, // 3
         Player2Win, // 4
-        Timeout, // 5
+        Player1Timeout, // 5
         WaitingForPlayer2ToJoin, // 6
-        Closed // 7
+        Closed, // 7
+        Cancelled, // 8
+        Player2Timeout // 9
     }
 
     struct GameField {
@@ -92,10 +94,12 @@ contract NoughtsAndCrosses is Initializable {
     modifier stateIsGameEnded(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(
-            (game.state == GameState.Player1Win ||
+            (game.state == GameState.Cancelled ||
+                game.state == GameState.Player1Win ||
                 game.state == GameState.Player2Win ||
                 game.state == GameState.Draw ||
-                game.state == GameState.Timeout),
+                game.state == GameState.Player1Timeout ||
+                game.state == GameState.Player2Timeout),
             _concat("The game is not ended, current state is: ", _getGameStateString(game.state))
         );
         _;
@@ -216,6 +220,13 @@ contract NoughtsAndCrosses is Initializable {
         return filtered;
     }
 
+    function cancelGame(uint256 _gameId) external stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin) {
+        Game storage game = games[_gameId];
+        game.state = GameState.Cancelled;
+
+        emit GameStateChanged(game.id, game.player1, game.player2, game.state);
+    }
+
     /// @notice Join the specified game. A caller becomes player2 and waits for player1 to make turn
     /// @param _gameId Game to join
     function joinGame(uint256 _gameId)
@@ -265,19 +276,20 @@ contract NoughtsAndCrosses is Initializable {
         returns (GameState state)
     {
         Game storage game = games[_gameId];
+        GameState savedState = game.state;
 
         if (block.timestamp - game.lastTurnTime > game.timeout) {
-            game.state = GameState.Timeout;
+            if (game.state == GameState.Player1Turn) {
+                game.state = GameState.Player1Timeout;
+            } else {
+                game.state = GameState.Player2Timeout;
+            }
         } else {
             game.state = _checkTurn(_gameId);
         }
 
-        if (
-            game.state == GameState.Player1Win ||
-            game.state == GameState.Player2Win ||
-            game.state == GameState.Draw ||
-            game.state == GameState.Timeout
-        ) {
+        // Expected new state: Player1Win or Player2Win or Draw or Timeout
+        if (game.state != savedState) {
             emit GameStateChanged(game.id, game.player1, game.player2, game.state);
         }
 
@@ -301,13 +313,17 @@ contract NoughtsAndCrosses is Initializable {
         require(sent, "Failed to send fee to wallet");
 
         // Send prize to players
-        if (savedState == GameState.Player1Win) {
+        if (
+            savedState == GameState.Cancelled ||
+            savedState == GameState.Player1Win ||
+            savedState == GameState.Player2Timeout
+        ) {
             (sent, ) = payable(game.player1).call{value: prize}("");
             require(sent, "Failed to send prize to Player 1");
-        } else if (savedState == GameState.Player2Win) {
+        } else if (savedState == GameState.Player2Win || savedState == GameState.Player1Timeout) {
             (sent, ) = payable(game.player2).call{value: prize}("");
             require(sent, "Failed to send prize to Player 2");
-        } else if (savedState == GameState.Draw || savedState == GameState.Timeout) {
+        } else if (savedState == GameState.Draw) {
             uint256 prize_half1 = prize / 2;
             uint256 prize_half2 = prize - prize_half1;
             (bool sent1, ) = payable(game.player1).call{value: prize_half1}("");
@@ -392,15 +408,17 @@ contract NoughtsAndCrosses is Initializable {
     }
 
     function _getGameStateString(GameState _state) internal pure returns (string memory) {
-        string[8] memory stateStrings = [
+        string[10] memory stateStrings = [
             "Draw",
             "Player 1 Turn",
             "Player 2 Turn",
             "Player 1 Win",
             "Player 2 Win",
-            "Timeout",
+            "Player 1 Timeout",
             "Waiting for Player 2 to join",
-            "Closed"
+            "Closed",
+            "Cancelled",
+            "Player 2 Timeout"
         ];
         return stateStrings[uint256(_state)];
     }
