@@ -40,6 +40,8 @@ npx hardhat delete-task --id 0 --network localhost
 
 ### NaughtsAndCrosses game
 
+Note: Don't forget to set `NoughtsAndCrossesAddress` in `tasks/NoughtsAndCrosses.ts`!
+
 ```
 npx hardhat quick-game --player1 0x590928e30103457a584465e31DF5CCd97109ACe8 --player2 0x09934701f5c76250feafee70bca144ebf97b0a02 --timeout 5 --bet 1000 --network localhost
 

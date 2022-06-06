@@ -6,7 +6,7 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
 
     const { deployments, getNamedAccounts, ethers } = hre
 
-    const { deployer, _, walletOwner1, walletOwner2, proxyAdminOwner } = await getNamedAccounts()
+    const { deployer, admin, walletOwner1, walletOwner2, proxyAdminOwner } = await getNamedAccounts()
 
     var balance = await ethers.provider.getBalance(deployer)
     console.log(`Deployer: ${deployer} , balance: ${ethers.utils.formatEther(balance)} `)
@@ -25,7 +25,7 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
             execute: {
                 init: {
                     methodName: "initialize",
-                    args: [multiSigWallet.address],
+                    args: [multiSigWallet.address, admin],
                 },
             },
         },

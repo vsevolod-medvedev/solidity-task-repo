@@ -11,6 +11,7 @@ contract NoughtsAndCrosses is Initializable {
     uint256 public minBet;
     uint256 public maxBet;
     address public wallet;
+    address public admin;
 
     enum FieldValue {
         Empty,
@@ -54,6 +55,11 @@ contract NoughtsAndCrosses is Initializable {
     modifier notTimeout(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(block.timestamp - game.lastTurnTime < game.timeout, "Time was out!");
+        _;
+    }
+
+    modifier adminOnly() {
+        require(msg.sender == admin, "This method can only be called by administrator");
         _;
     }
 
@@ -116,6 +122,11 @@ contract NoughtsAndCrosses is Initializable {
         _;
     }
 
+    modifier verifyFeeBps(uint256 _newFeeBps) {
+        require(0 <= _newFeeBps && _newFeeBps <= 1000); // from 0% to 10%
+        _;
+    }
+
     modifier verifyBetToCreate() {
         require(minBet <= msg.value && msg.value <= maxBet, "Bet to create is out of range");
         _;
@@ -141,11 +152,12 @@ contract NoughtsAndCrosses is Initializable {
     //        _disableInitializers();
     //    }
 
-    function initialize(address _multiSigWallet) public initializer {
+    function initialize(address _multiSigWallet, address _admin) public initializer {
         wallet = _multiSigWallet;
         feeBps = 100; // In basis points (1 BPS = 0.01%)
         minBet = 1000;
         maxBet = 1000000000000000;
+        admin = _admin;
     }
 
     /// @notice Function to receive Ether. msg.data must be empty
@@ -158,8 +170,14 @@ contract NoughtsAndCrosses is Initializable {
         emit Deposit(msg.sender, msg.value, address(this).balance, "Fallback was called");
     }
 
+    /// @notice Get the contract balance
     function getBalance() external view returns (uint256) {
         return address(this).balance;
+    }
+
+    /// @notice Change open and future games fee
+    function changeFee(uint256 _newFeeBps) external adminOnly verifyFeeBps(_newFeeBps) {
+        feeBps = _newFeeBps;
     }
 
     /// @notice Create a Noughts and Crosses game. A caller becomes player1 and waits for player2 to join

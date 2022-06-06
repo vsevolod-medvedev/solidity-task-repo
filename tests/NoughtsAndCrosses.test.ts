@@ -1,5 +1,5 @@
 import { expect, use } from "chai"
-import { deployments, ethers, waffle } from "hardhat"
+import { ethers, waffle } from "hardhat"
 import { prepareSigners } from "./utils/prepare"
 import { advanceTime } from "./utils/time"
 
@@ -9,10 +9,9 @@ describe("NoughtsAndCrosses contract tests", () => {
     beforeEach(async function () {
         await prepareSigners(this)
 
-        const { deploy } = deployments
-
         this.walletOwner1 = this.misha
         this.walletOwner2 = this.tema
+        this.admin = this.carol
 
         const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet")
         this.MultiSigWallet = await MultiSigWalletFactory.deploy()
@@ -20,7 +19,7 @@ describe("NoughtsAndCrosses contract tests", () => {
 
         const NoughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
         this.NoughtsAndCrosses = await NoughtsAndCrossesFactory.deploy()
-        this.NoughtsAndCrosses.initialize(this.MultiSigWallet.address)
+        this.NoughtsAndCrosses.initialize(this.MultiSigWallet.address, this.admin.address)
     })
 
     describe("As any user, I should be able to", () => {
