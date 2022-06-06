@@ -3,17 +3,6 @@ import type { ContractFactory } from "ethers"
 
 const NoughtsAndCrossesAddress = "0xEF443E6e35c20686ff1D1666580C5A47274b7802" // proxy!
 
-task("upgrade-game", "Upgrade NoughtsAndCrosses game")
-    .addParam("proxy", "The proxy address")
-    .setAction(async (taskArgs, hre) => {
-        const noughtsAndCrossesV2Factory = await hre.ethers.getContractFactory("NoughtsAndCrossesV2")
-        const noughtsAndCrossesV2 = await hre.upgrades.upgradeProxy(
-            taskArgs.proxy,
-            noughtsAndCrossesV2Factory as ContractFactory
-        )
-        console.log("NoughtsAndCrosses upgraded to V2 at: ", noughtsAndCrossesV2.address)
-    })
-
 task("create-game", "Create a game")
     .addParam("account", "The account's address")
     .addParam("timeout", "Timeout for a turn, in seconds")

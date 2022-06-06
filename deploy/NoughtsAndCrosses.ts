@@ -14,33 +14,22 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
     // 1. Get dependencies contracts
     const multiSigWallet = await deployments.get("MultiSigWallet")
 
-    // 2. Deploy main contract with proxy
-    // const noughtsAndCrosses = await deployments.deploy("NoughtsAndCrosses", {
-    //     contract: "NoughtsAndCrosses",
-    //     from: deployer,
-    //     log: true,
-    //     proxy: {
-    //         owner: proxyAdminOwner,
-    //         proxyContract: "OpenZeppelinTransparentProxy",
-    //         execute: {
-    //             init: {
-    //                 methodName: "initialize",
-    //                 args: [multiSigWallet.address],
-    //             },
-    //         },
-    //     },
-    // })
-    // ^ how to upgrade this? Docs don't answer (https://github.com/wighawag/hardhat-deploy#deploying-and-upgrading-proxies)
-
-    const noughtsAndCrossesFactory = await ethers.getContractFactory("NoughtsAndCrosses")
-    const noughtsAndCrosses = await hre.upgrades.deployProxy(noughtsAndCrossesFactory as ContractFactory, [
-        multiSigWallet.address,
-    ])
-    await noughtsAndCrosses.deployed()
-    console.log("NoughtsAndCrosses deployed to: ", noughtsAndCrosses.address)
-
-    // 3. Upgrade contract (just to test)
-    // See `upgrade-game` task
+    // 2. Deploy/upgrade main contract with proxy
+    const noughtsAndCrosses = await deployments.deploy("NoughtsAndCrosses", {
+        contract: "NoughtsAndCrosses",
+        from: deployer,
+        log: true,
+        proxy: {
+            owner: proxyAdminOwner,
+            proxyContract: "OpenZeppelinTransparentProxy",
+            execute: {
+                init: {
+                    methodName: "initialize",
+                    args: [multiSigWallet.address],
+                },
+            },
+        },
+    })
 }
 
 module.exports.tags = ["NoughtsAndCrosses"]

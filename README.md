@@ -74,8 +74,6 @@ npx hardhat complete-task --id <task_id> --account <address> --network <network>
 #### NoughtsAndCrosses tasks
 
 ```bash
-npx hardhat upgrade-game --proxy <address> --network <network>
-
 npx hardhat create-game --timeout 50 --account <address> --network <network>
 npx hardhat get-game --id <game_id> --network <network>
 npx hardhat list-games --network <network>
@@ -93,13 +91,13 @@ Run deploy in hardhat network
 npx hardhat deploy
 ```
 
-Deploy specific contracts by tags (with dependencies):
+Deploy/upgrade specific contracts with dependencies by tags:
 
 ```bash
-npx hardhat deploy --tags NoughtsAndCrosses
+npx hardhat deploy --tags NoughtsAndCrosses --network rinkeby
 ```
 
-Run deploy in ropsten network
+Run deploy all contracts in ropsten network
 
 ```bash
 npm run deploy:ropsten
