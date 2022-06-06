@@ -27,7 +27,7 @@ describe("NoughtsAndCrosses contract tests", () => {
         it("Create a game", async function () {
             await expect(this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 }))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
-                .withArgs(0, this.bob.address, "0x0000000000000000000000000000000000000000", 6)
+                .withArgs(0, this.bob.address, ethers.constants.AddressZero, 6)
             expect(await this.NoughtsAndCrosses.connect(this.bob).getGameState(0)).to.equal(
                 "Waiting for Player 2 to join"
             )
@@ -163,6 +163,28 @@ describe("NoughtsAndCrosses contract tests", () => {
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, player1.address, player2.address, 5)
             expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Player 1 Timeout")
+        })
+
+        it("Cancel the game", async function () {
+            const player1 = this.bob
+            const player2 = this.alice
+
+            await this.NoughtsAndCrosses.connect(player1).createGame(50, { value: 3000 })
+            await expect(this.NoughtsAndCrosses.connect(player2).cancelGame(0)).to.be.revertedWith(
+                "This method can only be called by the game creator (Player 1)"
+            )
+            await expect(await this.NoughtsAndCrosses.connect(player1).cancelGame(0))
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, player1.address, ethers.constants.AddressZero, 8)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Cancelled")
+
+            // Pay prize and fee
+            await expect(await this.NoughtsAndCrosses.connect(player1).getWin(0))
+                .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
+                .withArgs(0, player1.address, ethers.constants.AddressZero, 7)
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Closed")
+            expect(await this.NoughtsAndCrosses.getBalance()).to.equal(0)
+            expect(await this.MultiSigWallet.getBalance()).to.equal(30)
         })
     })
 

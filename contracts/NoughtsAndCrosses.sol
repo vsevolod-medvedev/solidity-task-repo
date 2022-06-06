@@ -79,6 +79,12 @@ contract NoughtsAndCrosses is Initializable {
         _;
     }
 
+    modifier creatorOnly(uint256 _gameId) {
+        Game memory game = games[_gameId];
+        require(msg.sender == game.player1, "This method can only be called by the game creator (Player 1)");
+        _;
+    }
+
     modifier stateIsAnyPlayerTurn(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(
@@ -220,7 +226,13 @@ contract NoughtsAndCrosses is Initializable {
         return filtered;
     }
 
-    function cancelGame(uint256 _gameId) external stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin) {
+    /// @notice Cancel the specified game. Only creator (player 1) can call this
+    /// @param _gameId Game to cancel
+    function cancelGame(uint256 _gameId)
+        external
+        creatorOnly(_gameId)
+        stateOnly(_gameId, GameState.WaitingForPlayer2ToJoin)
+    {
         Game storage game = games[_gameId];
         game.state = GameState.Cancelled;
 
@@ -296,16 +308,19 @@ contract NoughtsAndCrosses is Initializable {
         return game.state;
     }
 
-    /// @notice Get win. Can only be called by the player who won or if game is ended in a draw/timeout
+    /// @notice Get win. Can only be called by the player who won/lost or if the game is ended in a draw/timeout
     function getWin(uint256 _gameId) external stateIsGameEnded(_gameId) playerOnly(_gameId) {
         Game storage game = games[_gameId];
 
         GameState savedState = game.state;
         game.state = GameState.Closed;
 
-        uint256 game_bet = game.bet * 2;
+        uint256 game_bet = game.bet;
+        if (savedState != GameState.Cancelled) {
+            game_bet = game_bet * 2;
+        }
         uint256 fee = (game_bet * feeBps) / 10000;
-        uint256 prize = games[_gameId].bet * 2 - fee;
+        uint256 prize = game_bet - fee;
 
         // Send fee to Multi-Sig Wallet
         bool sent;
