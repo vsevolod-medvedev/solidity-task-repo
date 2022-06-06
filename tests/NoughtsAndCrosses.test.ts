@@ -162,7 +162,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             await expect(await this.NoughtsAndCrosses.connect(player1).checkGameState(0))
                 .to.emit(this.NoughtsAndCrosses, "GameStateChanged")
                 .withArgs(0, player1.address, player2.address, 5)
-            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Timeout")
+            expect(await this.NoughtsAndCrosses.connect(player1).getGameState(0)).to.equal("Player 1 Timeout")
         })
     })
 

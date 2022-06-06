@@ -32,6 +32,17 @@ task("list-games", "List created games").setAction(async (taskArgs, hre) => {
     console.log(games)
 })
 
+task("cancel-game", "Cancel the created game if Player 2 has not joined yet")
+    .addParam("account", "The account's address")
+    .addParam("id", "The game ID")
+    .setAction(async (taskArgs, hre) => {
+        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
+        const signer = await hre.ethers.getSigner(taskArgs.account)
+
+        await noughtsAndCrosses.connect(signer).cancelGame(taskArgs.id)
+        console.log("Cancelled the game!")
+    })
+
 task("join-game", "Join the game")
     .addParam("account", "The account's address")
     .addParam("id", "The game ID")
