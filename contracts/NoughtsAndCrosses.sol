@@ -7,11 +7,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 /// @author Vsevolod Medvedev
 /// @notice Player can create or join a game, and once it started, do turns until win, draw or timeout
 contract NoughtsAndCrosses is Initializable {
+    string public constant NAME = "NoughtsAndCrosses";
+
     uint256 public feeBps; // In basis points (1 BPS = 0.01%)
     uint256 public minBet;
     uint256 public maxBet;
     address public wallet;
     address public admin;
+
+    bytes32 public CHANGE_FEE_TYPEHASH;
+    bytes32 public DOMAIN_SEPARATOR;
+
+    mapping(address => uint256) public nonces;
 
     enum FieldValue {
         Empty,
@@ -55,11 +62,6 @@ contract NoughtsAndCrosses is Initializable {
     modifier notTimeout(uint256 _gameId) {
         Game memory game = games[_gameId];
         require(block.timestamp - game.lastTurnTime < game.timeout, "Time was out!");
-        _;
-    }
-
-    modifier adminOnly() {
-        require(msg.sender == admin, "This method can only be called by administrator");
         _;
     }
 
@@ -147,17 +149,28 @@ contract NoughtsAndCrosses is Initializable {
         _;
     }
 
-    // @custom:oz-upgrades-unsafe-allow constructor
-    //    constructor() {
-    //        _disableInitializers();
-    //    }
-
     function initialize(address _multiSigWallet, address _admin) public initializer {
         wallet = _multiSigWallet;
         feeBps = 100; // In basis points (1 BPS = 0.01%)
         minBet = 1000;
         maxBet = 1000000000000000;
         admin = _admin;
+
+        // EIP712 / EIP-2612 domains and permissions
+        uint256 chainId;
+        assembly {
+            chainId := chainid()
+        }
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+                keccak256(bytes(NAME)),
+                keccak256(bytes("1")),
+                chainId,
+                address(this)
+            )
+        );
+        CHANGE_FEE_TYPEHASH = keccak256("changeFee(uint256 _newFeeBps, uint8 _v, bytes32 _r, bytes32 _s)");
     }
 
     /// @notice Function to receive Ether. msg.data must be empty
@@ -176,7 +189,27 @@ contract NoughtsAndCrosses is Initializable {
     }
 
     /// @notice Change open and future games fee
-    function changeFee(uint256 _newFeeBps) external adminOnly verifyFeeBps(_newFeeBps) {
+    /// @param _newFeeBps New fee value in basis points (1 BPS = 0.01%)
+    function changeFee(
+        uint256 _newFeeBps,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) external verifyFeeBps(_newFeeBps) {
+        // Note: Here we demonstrate EIP-712 / EIP-2612 signing & verification approach for learning purposes
+        // (otherwise it could be implemented just with adminOnly modifier)
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(CHANGE_FEE_TYPEHASH, msg.sender, _newFeeBps, nonces[msg.sender]++))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, _v, _r, _s);
+        require(
+            recoveredAddress != address(0) && recoveredAddress == admin,
+            "This method can only be called by administrator"
+        );
         feeBps = _newFeeBps;
     }
 

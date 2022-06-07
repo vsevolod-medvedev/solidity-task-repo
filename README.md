@@ -132,5 +132,7 @@ $ npm run verify:ropsten
    https://solidity-by-example.org/sending-ether
 6. Proxy Upgrade Pattern:
    https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies
-7. EIP-712: Ethereum typed structured data hashing and signing:
+7. Deploying and Upgrading Proxies:
+   https://github.com/wighawag/hardhat-deploy#deploying-and-upgrading-proxies
+8. EIP-712: Ethereum typed structured data hashing and signing:
    https://eips.ethereum.org/EIPS/eip-712

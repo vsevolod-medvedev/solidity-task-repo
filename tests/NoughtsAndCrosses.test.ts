@@ -2,6 +2,7 @@ import { expect, use } from "chai"
 import { ethers, waffle } from "hardhat"
 import { prepareSigners } from "./utils/prepare"
 import { advanceTime } from "./utils/time"
+import { ecsign, privateToAddress } from "ethereumjs-util"
 
 use(waffle.solidity)
 
@@ -11,7 +12,12 @@ describe("NoughtsAndCrosses contract tests", () => {
 
         this.walletOwner1 = this.misha
         this.walletOwner2 = this.tema
-        this.admin = this.carol
+
+        this.admin = ethers.Wallet.createRandom().connect(ethers.provider)
+        await this.carol.sendTransaction({
+            to: this.admin.address,
+            value: ethers.utils.parseEther("1.0"), // 1.0 ETH
+        })
 
         const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet")
         this.MultiSigWallet = await MultiSigWalletFactory.deploy()
@@ -68,6 +74,45 @@ describe("NoughtsAndCrosses contract tests", () => {
             expect(games[1].player1).to.equal(this.alice.address)
             expect(games[1].timeout).to.equal(15)
             expect(games[1].bet).to.equal(5000)
+        })
+
+        it.only("Change a fee", async function () {
+            await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
+
+            const newFee = 200
+            expect(await this.NoughtsAndCrosses.feeBps()).to.not.equal(newFee)
+
+            const DOMAIN_SEPARATOR = await this.NoughtsAndCrosses.DOMAIN_SEPARATOR()
+            const CHANGE_FEE_TYPEHASH = await this.NoughtsAndCrosses.CHANGE_FEE_TYPEHASH()
+            const nonce = await this.NoughtsAndCrosses.nonces(this.admin.address)
+            const digest = ethers.utils.keccak256(
+                ethers.utils.solidityPack(
+                    ["bytes2", "bytes32", "bytes32"],
+                    [
+                        "0x1901",
+                        DOMAIN_SEPARATOR,
+                        ethers.utils.keccak256(
+                            ethers.utils.defaultAbiCoder.encode(
+                                ["bytes32", "address", "uint256", "uint256"],
+                                [CHANGE_FEE_TYPEHASH, this.admin.address, newFee, nonce]
+                            )
+                        ),
+                    ]
+                )
+            )
+            const { v, r, s } = ecsign(
+                Buffer.from(digest.slice(2), "hex"),
+                Buffer.from(this.admin.privateKey.slice(2), "hex")
+            )
+            const r_ = ethers.utils.hexlify(r)
+            const s_ = ethers.utils.hexlify(s)
+
+            await expect(this.NoughtsAndCrosses.connect(this.bob).changeFee(newFee, v, r_, s_)).to.be.revertedWith(
+                "This method can only be called by administrator"
+            )
+
+            await this.NoughtsAndCrosses.connect(this.admin).changeFee(newFee, v, r_, s_)
+            expect(await this.NoughtsAndCrosses.feeBps()).to.equal(newFee)
         })
     })
 
