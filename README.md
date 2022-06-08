@@ -62,16 +62,6 @@ npx hardhat node  # for running locally
 npx hardhat accounts
 ```
 
-#### TaskRepo tasks
-
-```bash
-npx hardhat create-task --estimated-time 50 --account <address> --network <network>
-npx hardhat get-task --id <task_id> --account <address> --network <network>
-npx hardhat list-tasks --network <network>
-npx hardhat delete-task --id <task_id> --account <address> --network <network>
-npx hardhat complete-task --id <task_id> --account <address> --network <network>
-```
-
 #### NoughtsAndCrosses tasks
 
 ```bash
@@ -82,6 +72,18 @@ npx hardhat join-game --id <game_id> --account <address> --network <network>
 npx hardhat make-turn --id <game_id> --x <x_coord> --y <y_coord> --account <address> --network <network>
 npx hardhat check-game-state --id <game_id> --account <address> --network <network>
 npx hardhat get-win --id <game_id> --account <address> --network <network>
+npx hardhat quick-game --player1 <address> --player2 <address> --timeout 5 --bet 1000 --network <network>
+npx hardhat change-fee --account <address> --privateKey <address> --timeout 5 --bet 1000 --network <network>
+```
+
+#### TaskRepo tasks
+
+```bash
+npx hardhat create-task --estimated-time 50 --account <address> --network <network>
+npx hardhat get-task --id <task_id> --account <address> --network <network>
+npx hardhat list-tasks --network <network>
+npx hardhat delete-task --id <task_id> --account <address> --network <network>
+npx hardhat complete-task --id <task_id> --account <address> --network <network>
 ```
 
 ### Deploy
@@ -95,7 +97,7 @@ npx hardhat deploy
 Deploy/upgrade specific contracts with dependencies by tags:
 
 ```bash
-npx hardhat deploy --tags NoughtsAndCrosses --network rinkeby
+npx hardhat deploy --tags NoughtsAndCrosses --network ropsten
 ```
 
 Run deploy all contracts in ropsten network
@@ -136,3 +138,5 @@ $ npm run verify:ropsten
    https://github.com/wighawag/hardhat-deploy#deploying-and-upgrading-proxies
 8. EIP-712: Ethereum typed structured data hashing and signing:
    https://eips.ethereum.org/EIPS/eip-712
+9. EIP-2612: permit – 712-signed approvals:
+   https://eips.ethereum.org/EIPS/eip-2612
