@@ -1,5 +1,5 @@
 import { task } from "hardhat/config"
-import type { ContractFactory } from "ethers"
+import { ecsign } from "ethereumjs-util"
 
 const NoughtsAndCrossesAddress = "0xEF443E6e35c20686ff1D1666580C5A47274b7802" // proxy!
 
@@ -133,4 +133,40 @@ task("quick-game", "Run quick game")
         console.log(await noughtsAndCrosses.connect(player1).getGameState(gameId))
 
         console.log(await noughtsAndCrosses.connect(player1).getGameField(gameId))
+    })
+
+task("change-fee", "Change open and future games fee")
+    .addParam("account", "The account's address")
+    .addParam("privateKey", "The account's private key")
+    .addParam("fee", "New fee in base points (1 BPS = 0.01%)")
+    .setAction(async (taskArgs, hre) => {
+        const noughtsAndCrosses = await hre.ethers.getContractAt("NoughtsAndCrosses", NoughtsAndCrossesAddress)
+        const newFee = taskArgs.fee
+        const signer = await hre.ethers.getSigner(taskArgs.account)
+        const DOMAIN_SEPARATOR = await noughtsAndCrosses.DOMAIN_SEPARATOR()
+        const CHANGE_FEE_TYPEHASH = await noughtsAndCrosses.CHANGE_FEE_TYPEHASH()
+        const nonce = await noughtsAndCrosses.nonces(signer.address)
+        const digest = hre.ethers.utils.keccak256(
+            hre.ethers.utils.solidityPack(
+                ["bytes2", "bytes32", "bytes32"],
+                [
+                    "0x1901",
+                    DOMAIN_SEPARATOR,
+                    hre.ethers.utils.keccak256(
+                        hre.ethers.utils.defaultAbiCoder.encode(
+                            ["bytes32", "address", "uint256", "uint256"],
+                            [CHANGE_FEE_TYPEHASH, signer.address, newFee, nonce]
+                        )
+                    ),
+                ]
+            )
+        )
+        const { v, r, s } = ecsign(
+            Buffer.from(digest.slice(2), "hex"),
+            Buffer.from(taskArgs.privateKey.slice(2), "hex")
+        )
+        const r_ = hre.ethers.utils.hexlify(r)
+        const s_ = hre.ethers.utils.hexlify(s)
+
+        await noughtsAndCrosses.connect(signer).changeFee(newFee, v, r_, s_)
     })

@@ -88,7 +88,7 @@ const config: HardhatUserConfig = {
         admin: 1,
         walletOwner1: 2,
         walletOwner2: 3,
-        proxyAdminOwner: 4, // 0xfa5187CB6CD9201cb5f61FCC11bE21D8B0C46B74
+        proxyAdminOwner: 4,
     },
     etherscan: {
         apiKey: process.env.ETHERSCAN_API_KEY || "API_KEY_WEB",

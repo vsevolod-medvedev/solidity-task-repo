@@ -10,6 +10,10 @@ module.exports = async function (hre: HardhatRuntimeEnvironment) {
 
     var balance = await ethers.provider.getBalance(deployer)
     console.log(`Deployer: ${deployer} , balance: ${ethers.utils.formatEther(balance)} `)
+    console.log(`Admin: ${admin}`)
+    console.log(`WalletOwner1: ${walletOwner1}`)
+    console.log(`WalletOwner2: ${walletOwner2}`)
+    console.log(`ProxyAdminOwner: ${proxyAdminOwner}`)
 
     // 1. Get dependencies contracts
     const multiSigWallet = await deployments.get("MultiSigWallet")

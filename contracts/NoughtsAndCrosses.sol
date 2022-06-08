@@ -170,7 +170,7 @@ contract NoughtsAndCrosses is Initializable {
                 address(this)
             )
         );
-        CHANGE_FEE_TYPEHASH = keccak256("changeFee(uint256 _newFeeBps, uint8 _v, bytes32 _r, bytes32 _s)");
+        CHANGE_FEE_TYPEHASH = keccak256("changeFee(address account,uint256 newFeeBps,uint256 nonce)");
     }
 
     /// @notice Function to receive Ether. msg.data must be empty
@@ -191,6 +191,7 @@ contract NoughtsAndCrosses is Initializable {
     /// @notice Change open and future games fee
     /// @param _newFeeBps New fee value in basis points (1 BPS = 0.01%)
     function changeFee(
+        address _account,
         uint256 _newFeeBps,
         uint8 _v,
         bytes32 _r,
@@ -202,7 +203,7 @@ contract NoughtsAndCrosses is Initializable {
             abi.encodePacked(
                 "\x19\x01",
                 DOMAIN_SEPARATOR,
-                keccak256(abi.encode(CHANGE_FEE_TYPEHASH, msg.sender, _newFeeBps, nonces[msg.sender]++))
+                keccak256(abi.encode(CHANGE_FEE_TYPEHASH, _account, _newFeeBps, nonces[_account]++))
             )
         );
         address recoveredAddress = ecrecover(digest, _v, _r, _s);

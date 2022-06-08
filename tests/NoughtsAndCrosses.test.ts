@@ -2,7 +2,7 @@ import { expect, use } from "chai"
 import { ethers, waffle } from "hardhat"
 import { prepareSigners } from "./utils/prepare"
 import { advanceTime } from "./utils/time"
-import { ecsign, privateToAddress } from "ethereumjs-util"
+import { ecsign } from "ethereumjs-util"
 
 use(waffle.solidity)
 
@@ -76,7 +76,7 @@ describe("NoughtsAndCrosses contract tests", () => {
             expect(games[1].bet).to.equal(5000)
         })
 
-        it.only("Change a fee", async function () {
+        it("Change a fee", async function () {
             await this.NoughtsAndCrosses.connect(this.bob).createGame(10, { value: 3000 })
 
             const newFee = 200
@@ -107,11 +107,11 @@ describe("NoughtsAndCrosses contract tests", () => {
             const r_ = ethers.utils.hexlify(r)
             const s_ = ethers.utils.hexlify(s)
 
-            await expect(this.NoughtsAndCrosses.connect(this.bob).changeFee(newFee, v, r_, s_)).to.be.revertedWith(
+            await expect(this.NoughtsAndCrosses.changeFee(this.bob.address, newFee, v, r_, s_)).to.be.revertedWith(
                 "This method can only be called by administrator"
             )
 
-            await this.NoughtsAndCrosses.connect(this.admin).changeFee(newFee, v, r_, s_)
+            await this.NoughtsAndCrosses.changeFee(this.admin.address, newFee, v, r_, s_)
             expect(await this.NoughtsAndCrosses.feeBps()).to.equal(newFee)
         })
     })
